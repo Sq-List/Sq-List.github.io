@@ -30,6 +30,8 @@ NexT.utils = {
         // Make sure img title tag will show correctly in fancybox
         $imageWrapLink.attr('title', imageTitle).attr('data-caption', imageTitle);
       }
+
+      $image.attr('referrerpolicy', 'no-referrer');
     });
 
     $.fancybox.defaults.hash = false;
