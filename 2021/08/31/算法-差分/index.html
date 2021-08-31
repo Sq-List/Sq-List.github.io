@@ -23,15 +23,24 @@
     var CONFIG = {"hostname":"sq-list.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"livere","storage":true,"lazyload":false,"nav":null,"activeClass":"livere"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Sq-List&#39;s Blog">
-<meta property="og:url" content="https://sq-list.github.io/tags/flink/index.html">
+  <meta name="description" content="概念差分，简单来说就是 下一个数值 ，减去上一个数值。 差分数组对应的概念是前缀和数组，对于数组 [1,2,2,4]，其差分数组为 [1,1,0,2]，差分数组的第 i 个数即为原数组的第 i-1 个元素和第 i 个元素的差值，也就是说我们对差分数组求前缀和即可得到原数组。 差分数组的性质是，当我们希望对原数组的某一个区间 [l,r] 施加一个增量 inc 时，差分数组 d 对应的改变是：d[l]">
+<meta property="og:type" content="article">
+<meta property="og:title" content="算法-差分">
+<meta property="og:url" content="https://sq-list.github.io/2021/08/31/%E7%AE%97%E6%B3%95-%E5%B7%AE%E5%88%86/index.html">
 <meta property="og:site_name" content="Sq-List&#39;s Blog">
+<meta property="og:description" content="概念差分，简单来说就是 下一个数值 ，减去上一个数值。 差分数组对应的概念是前缀和数组，对于数组 [1,2,2,4]，其差分数组为 [1,1,0,2]，差分数组的第 i 个数即为原数组的第 i-1 个元素和第 i 个元素的差值，也就是说我们对差分数组求前缀和即可得到原数组。 差分数组的性质是，当我们希望对原数组的某一个区间 [l,r] 施加一个增量 inc 时，差分数组 d 对应的改变是：d[l]">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/001XqbP0gy1gu09wjv3v4j60dw053mxp02.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/001XqbP0ly1gu09xaw258j60f804tmxs02.jpg">
+<meta property="article:published_time" content="2021-08-31T12:37:20.000Z">
+<meta property="article:modified_time" content="2021-08-31T13:07:42.057Z">
 <meta property="article:author" content="Sq-List">
+<meta property="article:tag" content="差分">
+<meta property="article:tag" content="算法">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ww1.sinaimg.cn/large/001XqbP0gy1gu09wjv3v4j60dw053mxp02.jpg">
 
-<link rel="canonical" href="https://sq-list.github.io/tags/flink/">
+<link rel="canonical" href="https://sq-list.github.io/2021/08/31/%E7%AE%97%E6%B3%95-%E5%B7%AE%E5%88%86/">
 
 
 <script id="page-configurations">
@@ -39,12 +48,12 @@
   CONFIG.page = {
     sidebar: "",
     isHome : false,
-    isPost : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>标签: flink | Sq-List's Blog</title>
+  <title>算法-差分 | Sq-List's Blog</title>
   
 
 
@@ -164,57 +173,152 @@
         <div class="content-wrap">
           
 
-          <div class="content tag">
+          <div class="content post posts-expand">
             
 
+    
   
   
-  
-  <div class="post-block">
-    <div class="posts-collapse">
-      <div class="collection-title">
-        <h2 class="collection-header">flink
-          <small>标签</small>
-        </h2>
-      </div>
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2021/08/31/%E7%AE%97%E6%B3%95-%E5%B7%AE%E5%88%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
+      <meta itemprop="name" content="Sq-List">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sq-List's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          算法-差分
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-08-31 20:37:20 / 修改时间：21:07:42" itemprop="dateCreated datePublished" datetime="2021-08-31T20:37:20+08:00">2021-08-31</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%AE%97%E6%B3%95/" itemprop="url" rel="index"><span itemprop="name">算法</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>487</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>1 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
 
       
-    <div class="collection-year">
-      <span class="collection-header">2021</span>
+        <h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>差分，简单来说就是 <code>下一个数值 ，减去上一个数值</code>。</p>
+<p>差分数组对应的概念是<code>前缀和数组</code>，对于数组 [1,2,2,4]，其差分数组为 [1,1,0,2]，差分数组的第 i 个数即为原数组的第 i-1 个元素和第 i 个元素的差值，也就是说我们对差分数组求前缀和即可得到原数组。</p>
+<p>差分数组的性质是，<strong>当我们希望对原数组的某一个区间 [l,r] 施加一个增量 inc 时，<code>差分数组 d 对应的改变是：d[l] 增加 inc，d[r+1] 减少 inc</code>。这样对于区间的修改就变为了对于两个位置的修改。并且这种修改是可以叠加的，即当我们多次对原数组的不同区间施加不同的增量，我们只要按规则修改差分数组即可。</strong></p>
+<h2 id="图例"><a href="#图例" class="headerlink" title="图例"></a>图例</h2><p>现有一个初始全为0，长度为5的数组，希望对其0到4施加一个增量10（用<code>[1, 5, 10]</code>表示）</p>
+<p>我们申请一个长度为 6 的数组，将其i=0值设为10，i=5值设为-10，然后再从头到尾求前缀和，就可以得到结果：</p>
+<p><img src="https://ww1.sinaimg.cn/large/001XqbP0gy1gu09wjv3v4j60dw053mxp02.jpg" alt="image-20210831104755996"></p>
+<p>同样地，如果给定的数据范围为多个，我们也可以按照差分数组来求解。</p>
+<p>比如，给定数据范围为 <code>[[1, 5, 10],[2, 6, 8]]</code>，请看图：</p>
+<p><img src="https://ww1.sinaimg.cn/large/001XqbP0ly1gu09xaw258j60f804tmxs02.jpg" alt="image-20210831105030587"></p>
+<h2 id="例题"><a href="#例题" class="headerlink" title="例题"></a>例题</h2><p><a href="https://leetcode-cn.com/problems/corporate-flight-bookings/" target="_blank" rel="noopener">1109-航班预订统计</a></p>
+<h2 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h2><p>遇到这种每个顺序序列节点上有增有减的题目，就可以考虑差分。</p>
+
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
+    
+    
+    
+      
 
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2021-03-02T22:59:24+08:00"
-              content="2021-03-02">
-          03-02
-        </time>
-      </div>
+        
 
-      <div class="post-title">
-          <a class="post-title-link" href="/2021/03/02/Flink%E7%AC%94%E8%AE%B0/" itemprop="url">
-            <span itemprop="name">Flink笔记</span>
-          </a>
-      </div>
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Sq-List
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://sq-list.github.io/2021/08/31/%E7%AE%97%E6%B3%95-%E5%B7%AE%E5%88%86/" title="算法-差分">https://sq-list.github.io/2021/08/31/算法-差分/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
 
-    </header>
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/%E5%B7%AE%E5%88%86/" rel="tag"><i class="fa fa-tag"></i> 差分</a>
+              <a href="/tags/%E7%AE%97%E6%B3%95/" rel="tag"><i class="fa fa-tag"></i> 算法</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/03/02/Flink%E7%AC%94%E8%AE%B0/" rel="prev" title="Flink笔记">
+      <i class="fa fa-chevron-left"></i> Flink笔记
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
   </article>
-
-    </div>
-  </div>
   
   
-  
-
   
 
 
 
           </div>
           
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80OTc3Ny8yNjI2OA=="></div>
+  </div>
+  
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -261,6 +365,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#图例"><span class="nav-number">2.</span> <span class="nav-text">图例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#例题"><span class="nav-number">3.</span> <span class="nav-text">例题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#思路"><span class="nav-number">4.</span> <span class="nav-text">思路</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -416,6 +521,21 @@
 
   
 
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
 
 </body>
 </html>
