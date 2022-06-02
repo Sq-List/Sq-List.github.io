@@ -18,6 +18,8 @@ Flink运行时架构主要包括四个不同的组件：
 * 任务管理器（TaskManager）
 * 分发器（Dispatcher）
 
+<!-- mode -->
+
 #### 作业管理器（JobManager）
 
 控制一个应用程序执行的主进程，每一个应用程序都会被一个**不同**的JobManager所控制执行。
