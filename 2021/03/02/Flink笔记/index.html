@@ -23,28 +23,83 @@
     var CONFIG = {"hostname":"sq-list.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"livere","storage":true,"lazyload":false,"nav":null,"activeClass":"livere"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Sq-List&#39;s Blog">
-<meta property="og:url" content="https://sq-list.github.io/index.html">
+  <meta name="description" content="1 Flink 运行架构1.1 Flink运行时的组件Flink运行时架构主要包括四个不同的组件：  作业管理器（JobManager） 资源管理器（ResourceManager） 任务管理器（TaskManager） 分发器（Dispatcher）  作业管理器（JobManager）控制一个应用程序执行的主进程，每一个应用程序都会被一个不同的JobManager所控制执行。 （集群配置时候的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Flink笔记">
+<meta property="og:url" content="https://sq-list.github.io/2021/03/02/Flink%E7%AC%94%E8%AE%B0/index.html">
 <meta property="og:site_name" content="Sq-List&#39;s Blog">
+<meta property="og:description" content="1 Flink 运行架构1.1 Flink运行时的组件Flink运行时架构主要包括四个不同的组件：  作业管理器（JobManager） 资源管理器（ResourceManager） 任务管理器（TaskManager） 分发器（Dispatcher）  作业管理器（JobManager）控制一个应用程序执行的主进程，每一个应用程序都会被一个不同的JobManager所控制执行。 （集群配置时候的">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1go6z60iq4lj20is04y74e.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1go7vuybqa0j20lm09dmxf.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsnflrcbb7j20i70cbaf3.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gocugauxpsj20kw06qdfu.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gocu55be2kj20k4097t93.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gocud3rworj20ia0seta1.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsnfm1emnwj20ha0bo779.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsnfm5ym5fj20h80gttil.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsnfma5edij20h80e5ajw.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsnfme38lwj20fe035q3j.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsnipnxmppj20o00dxgpj.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gpkoztraolj20kf04wt92.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gpp9cxvtpej20io0afweo.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gpp9gzfiybj20go09r3z8.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gpsyqj2a4zj20sq0h4wgk.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsnfmq5e2vj20h00bngm9.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gpyj2fhblbj20m20bhdgb.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gqdrd426xkj20yq0gmabe.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gr0rvi3fwoj20za0l2jsl.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsnfn1kpz9j20u80dm445.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gr6amdlx9vj20oc0hmgm7.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gr6bhe5mzrj20je0fodgi.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grawkjonvdj20gp0jtt9g.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdal7n67fj20e209iaa7.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdb0t6mfyj20g904zwee.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/001XqbP0ly1grdbabs89aj60g9057glj02.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdbe1gtypj20fs09at8w.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdebg5qflj20i308gglt.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdeod39flj20il08caa8.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdeunwmlgj20gl09hjrn.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdfc9uomkj20fl0973ys.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdjem87xwj20h808faag.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdjha1jrxj20ho081aa8.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grdjj1rwumj20h308ft8x.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grgxy184iaj20z609ogm3.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grgyr4cr6uj20pc09s3yi.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grhrmkhtjuj20yo0g4aan.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grhrst71csj20y20fgt9f.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grhrvudf1bj20y20h8my2.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gri5c7xsiuj20y80he0tz.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/001XqbP0ly1gri5ccifzrj60y20esjsa02.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1grxr6hekydj20h205vq32.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsebof3okxj20np04774o.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsebocl3bfj20j50a2aa8.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsebo8inflj20ma0dh74n.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsea1hdmogj20jn0bmaa6.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsea1q6yo1j20hk0ast8r.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsfdp3bq4nj20hh08t3ym.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gsgkwyy43lj20h7094dfy.jpg">
+<meta property="article:published_time" content="2021-03-02T14:59:24.000Z">
+<meta property="article:modified_time" content="2022-06-02T11:47:30.603Z">
 <meta property="article:author" content="Sq-List">
+<meta property="article:tag" content="flink">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1go6z60iq4lj20is04y74e.jpg">
 
-<link rel="canonical" href="https://sq-list.github.io/">
+<link rel="canonical" href="https://sq-list.github.io/2021/03/02/Flink%E7%AC%94%E8%AE%B0/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>Sq-List's Blog</title>
+  <title>Flink笔记 | Sq-List's Blog</title>
   
 
 
@@ -164,9 +219,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
@@ -182,10 +238,9 @@
       <meta itemprop="name" content="Sq-List's Blog">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/03/02/Flink%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">Flink笔记</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          Flink笔记
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -213,7 +268,14 @@
                 </span>
             </span>
 
-          <br>
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
             <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
                 <i class="far fa-file-word"></i>
@@ -238,7 +300,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="1-Flink-运行架构"><a href="#1-Flink-运行架构" class="headerlink" title="1 Flink 运行架构"></a>1 Flink 运行架构</h2><h3 id="1-1-Flink运行时的组件"><a href="#1-1-Flink运行时的组件" class="headerlink" title="1.1 Flink运行时的组件"></a>1.1 Flink运行时的组件</h3><p>Flink运行时架构主要包括四个不同的组件：</p>
+        <h2 id="1-Flink-运行架构"><a href="#1-Flink-运行架构" class="headerlink" title="1 Flink 运行架构"></a>1 Flink 运行架构</h2><h3 id="1-1-Flink运行时的组件"><a href="#1-1-Flink运行时的组件" class="headerlink" title="1.1 Flink运行时的组件"></a>1.1 Flink运行时的组件</h3><p>Flink运行时架构主要包括四个不同的组件：</p>
 <ul>
 <li>作业管理器（JobManager）</li>
 <li>资源管理器（ResourceManager）</li>
@@ -1482,296 +1544,64 @@
 
 
 
-      
     </div>
 
     
     
     
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
       
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2021/02/16/Maven%E7%AC%94%E8%AE%B0/">
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
-      <meta itemprop="name" content="Sq-List">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sq-List's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/02/16/Maven%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">Maven笔记</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-02-16 17:31:27" itemprop="dateCreated datePublished" datetime="2021-02-16T17:31:27+08:00">2021-02-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-18 14:28:46" itemprop="dateModified" datetime="2021-11-18T14:28:46+08:00">2021-11-18</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Maven/" itemprop="url" rel="index"><span itemprop="name">Maven</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>17k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>15 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>内容参照：<a href="http://c.biancheng.net/maven/" target="_blank" rel="noopener">Link</a></p>
-<h3 id="标准目录结构"><a href="#标准目录结构" class="headerlink" title="标准目录结构"></a>标准目录结构</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;project&gt;</span><br><span class="line">+- src</span><br><span class="line">|  +- main</span><br><span class="line">|     +- java</span><br><span class="line">|     +- resource</span><br><span class="line">|     \- webapp (web项目才需要有) </span><br><span class="line">|        \- web.xml</span><br><span class="line">|  +- test</span><br><span class="line">|     +- java</span><br><span class="line">|     \- resource</span><br><span class="line">\- pom.xml</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/02/16/Maven%E7%AC%94%E8%AE%B0/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
         
-      
-    </div>
 
-    
-    
-    
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Sq-List
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://sq-list.github.io/2021/03/02/Flink%E7%AC%94%E8%AE%B0/" title="Flink笔记">https://sq-list.github.io/2021/03/02/Flink笔记/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2020/12/05/%E7%89%88%E6%9C%AC%E5%8C%BA%E5%88%AB/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
-      <meta itemprop="name" content="Sq-List">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sq-List's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/12/05/%E7%89%88%E6%9C%AC%E5%8C%BA%E5%88%AB/" class="post-title-link" itemprop="url">版本区别</a>
-        </h2>
+          <div class="post-tags">
+              <a href="/tags/flink/" rel="tag"><i class="fa fa-tag"></i> flink</a>
+          </div>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-12-05 16:49:46 / 修改时间：17:02:02" itemprop="dateCreated datePublished" datetime="2020-12-05T16:49:46+08:00">2020-12-05</time>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>628</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ul>
-<li><p>Alpha：内部测试版，一般不向外部发布，会有很多BUG，一般只有测试人员使用。</p>
-</li>
-<li><p>Beta：测试版，这个阶段的版本会一直加入新的功能。在Alpha版之后推出。</p>
-</li>
-<li><p>RC（Release Candidate）：用在软件上就是候选版本，系统平台上就是发型候选版本。不会再加入新功能，主要着重于除错。</p>
-</li>
-<li><p>GA（General Availability）：正式发布的版本，在国外都是用GA来说明release版本。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/12/05/%E7%89%88%E6%9C%AC%E5%8C%BA%E5%88%AB/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
         
-      
-    </div>
 
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/16/Maven%E7%AC%94%E8%AE%B0/" rel="prev" title="Maven笔记">
+      <i class="fa fa-chevron-left"></i> Maven笔记
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
       </footer>
+    
   </article>
   
   
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2020/04/21/Start/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
-      <meta itemprop="name" content="Sq-List">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sq-List's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/04/21/Start/" class="post-title-link" itemprop="url">Start</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-21 15:55:15" itemprop="dateCreated datePublished" datetime="2020-04-21T15:55:15+08:00">2020-04-21</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-11 20:33:58" itemprop="dateModified" datetime="2020-08-11T20:33:58+08:00">2020-08-11</time>
-              </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>22</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Start"><a href="#Start" class="headerlink" title="Start"></a>Start</h1><p>Start writing blog!</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/04/21/Start/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-
   
 
 
 
           </div>
           
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80OTc3Ny8yNjI2OA=="></div>
+  </div>
+  
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -1818,6 +1648,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Flink-运行架构"><span class="nav-text">1 Flink 运行架构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-Flink运行时的组件"><span class="nav-text">1.1 Flink运行时的组件</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#作业管理器（JobManager）"><span class="nav-text">作业管理器（JobManager）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#资源管理器（ResourceManager）"><span class="nav-text">资源管理器（ResourceManager）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#任务管理器（TaskManager）"><span class="nav-text">任务管理器（TaskManager）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#分发器（Dispatcher）"><span class="nav-text">分发器（Dispatcher）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-任务提交流程"><span class="nav-text">1.2 任务提交流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-任务调度原理"><span class="nav-text">1.3 任务调度原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-1-TaskManager与Slots"><span class="nav-text">1.3.1 TaskManager与Slots</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-2-程序与数据流（DataFlow）"><span class="nav-text">1.3.2 程序与数据流（DataFlow）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-3-执行图（ExecutionGraph）"><span class="nav-text">1.3.3 执行图（ExecutionGraph）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-4-数据传输形式"><span class="nav-text">1.3.4 数据传输形式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-3-5-任务链（OperatorChains）"><span class="nav-text">1.3.5 任务链（OperatorChains）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-Flink流处理API"><span class="nav-text">2 Flink流处理API</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-Environment"><span class="nav-text">2.1 Environment</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-1-getExecutionEnvironment"><span class="nav-text">2.1.1 getExecutionEnvironment</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-2-createLocalEnvironment"><span class="nav-text">2.1.2 createLocalEnvironment</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1-3-createRemoteEnvironment"><span class="nav-text">2.1.3 createRemoteEnvironment</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-Transform"><span class="nav-text">2.2 Transform</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2-1-算子转换"><span class="nav-text">2.2.1 算子转换</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-支持的数据类型"><span class="nav-text">2.3 支持的数据类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-1-基础数据类型"><span class="nav-text">2.3.1 基础数据类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-2-Java-和-Scala-元组（Tuples）"><span class="nav-text">2.3.2 Java 和 Scala 元组（Tuples）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-3-Java简单对象（JOPO）"><span class="nav-text">2.3.3 Java简单对象（JOPO）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3-4-其他（Arrays-Lists-Maps-Enums等等）"><span class="nav-text">2.3.4 其他（Arrays, Lists, Maps, Enums等等）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-实现UDF函数——更细粒度的控制流"><span class="nav-text">2.4 实现UDF函数——更细粒度的控制流</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-1-函数类（Function-Classes）"><span class="nav-text">2.4.1 函数类（Function Classes）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-4-2-富函数（Rich-Functions）"><span class="nav-text">2.4.2 富函数（Rich Functions）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#测试代码"><span class="nav-text">测试代码</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-数据重分区操作"><span class="nav-text">2.5 数据重分区操作</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#测试代码-1"><span class="nav-text">测试代码</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-Flink中的Window"><span class="nav-text">3 Flink中的Window</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-Window"><span class="nav-text">3.1 Window</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-1-概述"><span class="nav-text">3.1.1 概述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-1-2-window类型"><span class="nav-text">3.1.2 window类型</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#滚动窗口（Tumbling-Windows）"><span class="nav-text">滚动窗口（Tumbling Windows）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#滑动窗口（Sliding-Windows）"><span class="nav-text">滑动窗口（Sliding Windows）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#会话窗口（Session-Windows）"><span class="nav-text">会话窗口（Session Windows）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-Window-API"><span class="nav-text">3.2 Window API</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-1-概述"><span class="nav-text">3.2.1 概述</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#窗口分配器（Window-assigner）"><span class="nav-text">窗口分配器（Window assigner）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#创建不同类型的窗口"><span class="nav-text">创建不同类型的窗口</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-2-TimeWindow"><span class="nav-text">3.2.2 TimeWindow</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#滚动窗口"><span class="nav-text">滚动窗口</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#滑动窗口"><span class="nav-text">滑动窗口</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-3-CountWindow"><span class="nav-text">3.2.3 CountWindow</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#滚动窗口-1"><span class="nav-text">滚动窗口</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#滑动窗口-1"><span class="nav-text">滑动窗口</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-4-SessionWindow"><span class="nav-text">3.2.4 SessionWindow</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-2-5-window-function"><span class="nav-text">3.2.5 window function</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#增量聚合函数"><span class="nav-text">增量聚合函数</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#全窗口函数"><span class="nav-text">全窗口函数</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#其他可选API"><span class="nav-text">其他可选API</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-时间语义和watermark"><span class="nav-text">4. 时间语义和watermark</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-1-Flink中的时间语义"><span class="nav-text">4.1 Flink中的时间语义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-EventTime的引入"><span class="nav-text">4.2 EventTime的引入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-Watermark"><span class="nav-text">4.3 Watermark</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-1-基本概念"><span class="nav-text">4.3.1 基本概念</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-2-Watermark的传递"><span class="nav-text">4.3.2 Watermark的传递</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-3-Watermark的引入"><span class="nav-text">4.3.3 Watermark的引入</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Assigner-with-periodic-watermarks"><span class="nav-text">Assigner with periodic watermarks</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Assigner-with-punctuated-watermarks"><span class="nav-text">Assigner with punctuated watermarks</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-3-4-测试代码"><span class="nav-text">4.3.4 测试代码</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#并行任务Watermark传递测试"><span class="nav-text">并行任务Watermark传递测试</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-Flink状态管理"><span class="nav-text">5 Flink状态管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-状态概述"><span class="nav-text">5.1 状态概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-算子状态（Operator-State）"><span class="nav-text">5.2 算子状态（Operator State）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#算子状态数据结构"><span class="nav-text">算子状态数据结构</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-键控状态（Keyed-State）"><span class="nav-text">5.3 键控状态（Keyed State）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#键控状态数据结构"><span class="nav-text">键控状态数据结构</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-4-状态后端（State-Backends）"><span class="nav-text">5.4 状态后端（State Backends）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-4-1-概述"><span class="nav-text">5.4.1 概述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-4-2-状态后端的类型"><span class="nav-text">5.4.2 状态后端的类型</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-ProcessFunction-API（底层API）"><span class="nav-text">6 ProcessFunction API（底层API）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-KeyedProcessFunction"><span class="nav-text">6.1 KeyedProcessFunction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-TimerService-和定时器（Timers）"><span class="nav-text">6.2 TimerService 和定时器（Timers）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-侧输出流（SideOutput）"><span class="nav-text">6.3 侧输出流（SideOutput）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4-CoProcessFunction"><span class="nav-text">6.4 CoProcessFunction</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-容错机制"><span class="nav-text">7 容错机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-一致性检查点（CheckPoint）"><span class="nav-text">7.1 一致性检查点（CheckPoint）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-从检查点恢复状态"><span class="nav-text">7.2 从检查点恢复状态</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#7-2-1-故障"><span class="nav-text">7.2.1 故障</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-2-2-恢复-第一步"><span class="nav-text">7.2.2 恢复-第一步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-2-3-恢复-第二步"><span class="nav-text">7.2.3 恢复-第二步</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-2-4-恢复-第三步"><span class="nav-text">7.2.4 恢复-第三步</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-3-Flink检查点算法"><span class="nav-text">7.3 Flink检查点算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#7-3-1-概述"><span class="nav-text">7.3.1 概述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-3-2-讲解"><span class="nav-text">7.3.2 讲解</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-4-保存点（SavePoint）"><span class="nav-text">7.4 保存点（SavePoint）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-5-检查点和重启策略配置"><span class="nav-text">7.5 检查点和重启策略配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-6-状态一致性"><span class="nav-text">7.6 状态一致性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#7-6-1-概述"><span class="nav-text">7.6.1 概述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-6-2-分类"><span class="nav-text">7.6.2 分类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-6-3-一致性检查点（CheckPoints）"><span class="nav-text">7.6.3 一致性检查点（CheckPoints）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#端到端（end-to-end）状态一致性"><span class="nav-text">端到端（end-to-end）状态一致性</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#端到端-exactly-once"><span class="nav-text">端到端 exactly-once</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#幂等写入"><span class="nav-text">幂等写入</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#事务写入"><span class="nav-text">事务写入</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#预写日志（Write-Ahead-Log，WAL）"><span class="nav-text">预写日志（Write-Ahead-Log，WAL）</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#两阶段提交（Two-Phase-Commit，2PC）"><span class="nav-text">两阶段提交（Two-Phase-Commit，2PC）</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#2PC对外部sink系统的要求"><span class="nav-text">2PC对外部sink系统的要求</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#不同Source和Sink的一致性保证"><span class="nav-text">不同Source和Sink的一致性保证</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-7-Flink-Kafka端到端状态一致性的保证"><span class="nav-text">7.7 Flink+Kafka端到端状态一致性的保证</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#7-7-1-Exactly-once-两阶段提交"><span class="nav-text">7.7.1 Exactly-once 两阶段提交</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-7-2-步骤总结"><span class="nav-text">7.7.2 步骤总结</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#7-7-3-配置要求"><span class="nav-text">7.7.3 配置要求</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-Table-API-与-SQL"><span class="nav-text">8 Table API 与 SQL</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#8-1-概述"><span class="nav-text">8.1 概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-2-基本程序结构"><span class="nav-text">8.2 基本程序结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-3-Table-API批处理和流处理"><span class="nav-text">8.3 Table API批处理和流处理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#8-3-1-表（Table）"><span class="nav-text">8.3.1 表（Table）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-3-2-创建表"><span class="nav-text">8.3.2 创建表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-3-3-创建TableEnvironment"><span class="nav-text">8.3.3 创建TableEnvironment</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#测试代码-2"><span class="nav-text">测试代码</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-3-4-表的查询"><span class="nav-text">8.3.4 表的查询</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#从文件获取数据"><span class="nav-text">从文件获取数据</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#数据写入到文件"><span class="nav-text">数据写入到文件</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-3-5-更新模式"><span class="nav-text">8.3.5 更新模式</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-4-表和流的转换（有界的）"><span class="nav-text">8.4 表和流的转换（有界的）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#8-4-1-将Table转换成DataStream"><span class="nav-text">8.4.1 将Table转换成DataStream</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-4-2-将DataStream转换成Table"><span class="nav-text">8.4.2 将DataStream转换成Table</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-4-3-创建临时视图（Temporary-View）"><span class="nav-text">8.4.3 创建临时视图（Temporary View）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-5-查看执行计划"><span class="nav-text">8.5 查看执行计划</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-6-流处理和关系代数的区别（无界的）"><span class="nav-text">8.6 流处理和关系代数的区别（无界的）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-6-1-动态表（Dynamic-Tables）"><span class="nav-text">8.6.1 动态表（Dynamic Tables）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#8-6-2-动态表和持续查询"><span class="nav-text">8.6.2 动态表和持续查询</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-6-3-将流转换成动态表"><span class="nav-text">8.6.3 将流转换成动态表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-6-4-持续查询"><span class="nav-text">8.6.4 持续查询</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#8-6-5-将动态表转换成DataStream"><span class="nav-text">8.6.5 将动态表转换成DataStream</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-时间特性（Time-Attributes）"><span class="nav-text">9 时间特性（Time Attributes）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#9-1-概述"><span class="nav-text">9.1 概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-2-定义处理时间（Processing-Time）"><span class="nav-text">9.2 定义处理时间（Processing Time）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#9-2-1-由DataStream转换成表时指定"><span class="nav-text">9.2.1 由DataStream转换成表时指定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-2-2-定义Table-Schema时指定"><span class="nav-text">9.2.2 定义Table Schema时指定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-2-3-创建表的DDL中定义"><span class="nav-text">9.2.3 创建表的DDL中定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-2-4-测试代码"><span class="nav-text">9.2.4 测试代码</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-3-定义事件时间（Event-Time）"><span class="nav-text">9.3 定义事件时间（Event Time）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#9-3-1-由DataStream转换成表时指定"><span class="nav-text">9.3.1 由DataStream转换成表时指定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-3-2-定义Table-Schema时指定"><span class="nav-text">9.3.2 定义Table Schema时指定</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-3-3-创建表的DDL中定义"><span class="nav-text">9.3.3 创建表的DDL中定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-3-4-测试代码"><span class="nav-text">9.3.4 测试代码</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-4-窗口"><span class="nav-text">9.4 窗口</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#9-4-1-Group-Window"><span class="nav-text">9.4.1 Group Window</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#9-4-1-1-滚动窗口（Tumbling-windows）"><span class="nav-text">9.4.1.1 滚动窗口（Tumbling windows）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#9-4-1-2-滑动窗口（Sliding-windows）"><span class="nav-text">9.4.1.2 滑动窗口（Sliding windows）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#9-4-1-3-会话窗口（Session-windows）"><span class="nav-text">9.4.1.3 会话窗口（Session windows）</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-4-2-SQL中的Group-Windows"><span class="nav-text">9.4.2 SQL中的Group Windows</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-4-3-Over-Windows"><span class="nav-text">9.4.3 Over Windows</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#无界Over-Windows"><span class="nav-text">无界Over Windows</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#有界Over-Windows"><span class="nav-text">有界Over Windows</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-4-4-SQL-中的-Over-Windows"><span class="nav-text">9.4.4 SQL 中的 Over Windows</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#9-4-5-测试代码"><span class="nav-text">9.4.5 测试代码</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#10-函数（Functions）"><span class="nav-text">10 函数（Functions）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#10-1-用户自定义函数（UDF）"><span class="nav-text">10.1 用户自定义函数（UDF）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#10-1-1-标量函数（Scalar-Functions）"><span class="nav-text">10.1.1 标量函数（Scalar Functions）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#测试代码-3"><span class="nav-text">测试代码</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#10-1-2-表格函数（Table-Functions）"><span class="nav-text">10.1.2 表格函数（Table Functions）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#测试代码-4"><span class="nav-text">测试代码</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#10-1-3-聚合函数（Aggregation-Functions）"><span class="nav-text">10.1.3 聚合函数（Aggregation Functions）</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#测试代码-5"><span class="nav-text">测试代码</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#10-1-4-表聚合函数"><span class="nav-text">10.1.4 表聚合函数</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#测试代码-6"><span class="nav-text">测试代码</span></a></li></ol></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -1973,6 +1804,21 @@
 
   
 
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
 
 </body>
 </html>
