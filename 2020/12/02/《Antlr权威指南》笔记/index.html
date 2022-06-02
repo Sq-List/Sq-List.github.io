@@ -23,28 +23,41 @@
     var CONFIG = {"hostname":"sq-list.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"livere","storage":true,"lazyload":false,"nav":null,"activeClass":"livere"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Sq-List&#39;s Blog">
-<meta property="og:url" content="https://sq-list.github.io/index.html">
+  <meta name="description" content="第二章 纵观全局2.1 元语言开始 语言由一系列有意义的语句组成，语句（sentence）由词组组成，词组（phrase）由更小的子词组（subphrase）和词汇符号（vocabulary symbol）组成。 一般来说，一个程序能够分析计算或者“执行”语句，我们称之为解释器（interpreter）。例子：计算器、读取配置文件的程序和Python解释器。 一个程序能够将一门语言的语句转换为另外">
+<meta property="og:type" content="article">
+<meta property="og:title" content="《Antlr权威指南》笔记">
+<meta property="og:url" content="https://sq-list.github.io/2020/12/02/%E3%80%8AAntlr%E6%9D%83%E5%A8%81%E6%8C%87%E5%8D%97%E3%80%8B%E7%AC%94%E8%AE%B0/index.html">
 <meta property="og:site_name" content="Sq-List&#39;s Blog">
+<meta property="og:description" content="第二章 纵观全局2.1 元语言开始 语言由一系列有意义的语句组成，语句（sentence）由词组组成，词组（phrase）由更小的子词组（subphrase）和词汇符号（vocabulary symbol）组成。 一般来说，一个程序能够分析计算或者“执行”语句，我们称之为解释器（interpreter）。例子：计算器、读取配置文件的程序和Python解释器。 一个程序能够将一门语言的语句转换为另外">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gm73e72ndgj20fj03s3yb.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gmbwf418p5j20mm0mv0t3.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gmbwfvhq9wj20mm0bd0st.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gmngajxkt4j20mn0g60t2.jpg">
+<meta property="og:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gmohkf9m0vj20mq08emxe.jpg">
+<meta property="article:published_time" content="2020-12-02T09:10:16.000Z">
+<meta property="article:modified_time" content="2022-06-02T10:59:27.544Z">
 <meta property="article:author" content="Sq-List">
+<meta property="article:tag" content="Antlr">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="语法">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ww1.sinaimg.cn/large/6af0fe46ly1gm73e72ndgj20fj03s3yb.jpg">
 
-<link rel="canonical" href="https://sq-list.github.io/">
+<link rel="canonical" href="https://sq-list.github.io/2020/12/02/%E3%80%8AAntlr%E6%9D%83%E5%A8%81%E6%8C%87%E5%8D%97%E3%80%8B%E7%AC%94%E8%AE%B0/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>Sq-List's Blog</title>
+  <title>《Antlr权威指南》笔记 | Sq-List's Blog</title>
   
 
 
@@ -164,437 +177,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2021/02/16/Maven%E7%AC%94%E8%AE%B0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
-      <meta itemprop="name" content="Sq-List">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sq-List's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/02/16/Maven%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">Maven笔记</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-02-16 17:31:27" itemprop="dateCreated datePublished" datetime="2021-02-16T17:31:27+08:00">2021-02-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-11-18 14:28:46" itemprop="dateModified" datetime="2021-11-18T14:28:46+08:00">2021-11-18</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Maven/" itemprop="url" rel="index"><span itemprop="name">Maven</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>17k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>15 分钟</span>
-            </span>
-
-        </div>
-      </header>
 
     
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>内容参照：<a href="http://c.biancheng.net/maven/" target="_blank" rel="noopener">Link</a></p>
-<h3 id="标准目录结构"><a href="#标准目录结构" class="headerlink" title="标准目录结构"></a>标准目录结构</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;project&gt;</span><br><span class="line">+- src</span><br><span class="line">|  +- main</span><br><span class="line">|     +- java</span><br><span class="line">|     +- resource</span><br><span class="line">|     \- webapp (web项目才需要有) </span><br><span class="line">|        \- web.xml</span><br><span class="line">|  +- test</span><br><span class="line">|     +- java</span><br><span class="line">|     \- resource</span><br><span class="line">\- pom.xml</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/02/16/Maven%E7%AC%94%E8%AE%B0/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2020/12/05/%E7%89%88%E6%9C%AC%E5%8C%BA%E5%88%AB/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
-      <meta itemprop="name" content="Sq-List">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sq-List's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/12/05/%E7%89%88%E6%9C%AC%E5%8C%BA%E5%88%AB/" class="post-title-link" itemprop="url">版本区别</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-12-05 16:49:46 / 修改时间：17:02:02" itemprop="dateCreated datePublished" datetime="2020-12-05T16:49:46+08:00">2020-12-05</time>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>628</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ul>
-<li><p>Alpha：内部测试版，一般不向外部发布，会有很多BUG，一般只有测试人员使用。</p>
-</li>
-<li><p>Beta：测试版，这个阶段的版本会一直加入新的功能。在Alpha版之后推出。</p>
-</li>
-<li><p>RC（Release Candidate）：用在软件上就是候选版本，系统平台上就是发型候选版本。不会再加入新功能，主要着重于除错。</p>
-</li>
-<li><p>GA（General Availability）：正式发布的版本，在国外都是用GA来说明release版本。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/12/05/%E7%89%88%E6%9C%AC%E5%8C%BA%E5%88%AB/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2020/12/02/Nginx%E7%AC%94%E8%AE%B0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
-      <meta itemprop="name" content="Sq-List">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sq-List's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/12/02/Nginx%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">Nginx笔记</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-12-02 17:10:16" itemprop="dateCreated datePublished" datetime="2020-12-02T17:10:16+08:00">2020-12-02</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-06-02 18:59:27" itemprop="dateModified" datetime="2022-06-02T18:59:27+08:00">2022-06-02</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Nginx/" itemprop="url" rel="index"><span itemprop="name">Nginx</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>321</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h3 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h3><ol>
-<li>IO多路复用<ul>
-<li>多个描述符的I/O操作都能在一个线程内并发交替地顺序完成，这里的“复用”指的是复用同一个线程。</li>
-<li>select、poll、epoll</li>
-</ul>
-</li>
-<li>轻量级</li>
-<li>CPU亲和（afinity）<ul>
-<li>CPU核心和nginx work进程绑定方式，把work进行固定在一个cpu上执行，减少切换cpu的cache miss，获得更好的性能。</li>
-</ul>
-</li>
-<li>sendfile<ul>
-<li>零拷贝</li>
-</ul>
-</li>
-</ol>
-<h3 id="安装目录"><a href="#安装目录" class="headerlink" title="安装目录"></a>安装目录</h3><table>
-<thead>
-<tr>
-<th>路径</th>
-<th>类型</th>
-<th>作用</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>/etc/logrotate.d/nginx</td>
-<td>配置文件</td>
-<td>Nginx日志轮转，用于logrotate服务的日志切割</td>
-</tr>
-<tr>
-<td>/etc/nginx<br />/etc/nginx/nginx.conf<br />/etc/nginx/conf.d<br />/etc/nginx/conf.d/default.conf</td>
-<td>目录、配置文件</td>
-<td>主配置文件<br /></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-</tbody></table>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2020/12/02/HDFS%E7%AC%94%E8%AE%B0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
-      <meta itemprop="name" content="Sq-List">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sq-List's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/12/02/HDFS%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">HDFS笔记</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-12-02 17:10:16" itemprop="dateCreated datePublished" datetime="2020-12-02T17:10:16+08:00">2020-12-02</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-06-02 18:59:27" itemprop="dateModified" datetime="2022-06-02T18:59:27+08:00">2022-06-02</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/HDFS/" itemprop="url" rel="index"><span itemprop="name">HDFS</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>4</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>HDFS</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
@@ -610,10 +196,9 @@
       <meta itemprop="name" content="Sq-List's Blog">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/12/02/%E3%80%8AAntlr%E6%9D%83%E5%A8%81%E6%8C%87%E5%8D%97%E3%80%8B%E7%AC%94%E8%AE%B0/" class="post-title-link" itemprop="url">《Antlr权威指南》笔记</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          《Antlr权威指南》笔记
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -641,7 +226,14 @@
                 </span>
             </span>
 
-          <br>
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
             <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
                 <i class="far fa-file-word"></i>
@@ -666,7 +258,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="第二章-纵观全局"><a href="#第二章-纵观全局" class="headerlink" title="第二章 纵观全局"></a>第二章 纵观全局</h2><h3 id="2-1-元语言开始"><a href="#2-1-元语言开始" class="headerlink" title="2.1 元语言开始"></a>2.1 元语言开始</h3><ul>
+        <h2 id="第二章-纵观全局"><a href="#第二章-纵观全局" class="headerlink" title="第二章 纵观全局"></a>第二章 纵观全局</h2><h3 id="2-1-元语言开始"><a href="#2-1-元语言开始" class="headerlink" title="2.1 元语言开始"></a>2.1 元语言开始</h3><ul>
 <li>语言由一系列有意义的语句组成，语句（sentence）由词组组成，词组（phrase）由更小的子词组（subphrase）和词汇符号（vocabulary symbol）组成。</li>
 <li>一般来说，一个程序能够分析计算或者“执行”语句，我们称之为<strong>解释器（interpreter）</strong>。例子：计算器、读取配置文件的程序和Python解释器。</li>
 <li>一个程序能够将一门语言的语句转换为另外一门语言的语句，我们称之为<strong>翻译器（translator）</strong>。例子：Java到C#的转换器和普通的编译器。</li>
@@ -722,113 +314,69 @@
 <li><strong>前向预测</strong>：语法分析器使用前向预测来进行决策，具体方法是：将输入的符号与每个备选分支的起始符号进行比较。</li>
 </ul>
 <h2 id="第三章-入门"><a href="#第三章-入门" class="headerlink" title="第三章 入门"></a>第三章 入门</h2>
-      
     </div>
 
     
     
     
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
       
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2020/04/21/Start/">
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
-      <meta itemprop="name" content="Sq-List">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Sq-List's Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/04/21/Start/" class="post-title-link" itemprop="url">Start</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-04-21 15:55:15" itemprop="dateCreated datePublished" datetime="2020-04-21T15:55:15+08:00">2020-04-21</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-11 20:33:58" itemprop="dateModified" datetime="2020-08-11T20:33:58+08:00">2020-08-11</time>
-              </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="far fa-file-word"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>22</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="far fa-clock"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>1 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Start"><a href="#Start" class="headerlink" title="Start"></a>Start</h1><p>Start writing blog!</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/04/21/Start/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
         
-      
-    </div>
 
-    
-    
-    
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Sq-List
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://sq-list.github.io/2020/12/02/%E3%80%8AAntlr%E6%9D%83%E5%A8%81%E6%8C%87%E5%8D%97%E3%80%8B%E7%AC%94%E8%AE%B0/" title="《Antlr权威指南》笔记">https://sq-list.github.io/2020/12/02/《Antlr权威指南》笔记/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
+          
+          <div class="post-tags">
+              <a href="/tags/Antlr/" rel="tag"><i class="fa fa-tag"></i> Antlr</a>
+              <a href="/tags/%E7%AC%94%E8%AE%B0/" rel="tag"><i class="fa fa-tag"></i> 笔记</a>
+              <a href="/tags/%E8%AF%AD%E6%B3%95/" rel="tag"><i class="fa fa-tag"></i> 语法</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/21/Start/" rel="prev" title="Start">
+      <i class="fa fa-chevron-left"></i> Start
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/12/02/HDFS%E7%AC%94%E8%AE%B0/" rel="next" title="HDFS笔记">
+      HDFS笔记 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
       </footer>
+    
   </article>
   
   
-  
-
-
   
 
 
 
           </div>
           
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80OTc3Ny8yNjI2OA=="></div>
+  </div>
+  
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -875,6 +423,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#第二章-纵观全局"><span class="nav-text">第二章 纵观全局</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-元语言开始"><span class="nav-text">2.1 元语言开始</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-实现一个语法分析器"><span class="nav-text">2.2 实现一个语法分析器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-歧义性语句"><span class="nav-text">2.3 歧义性语句</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-4-使用语法分析树来构建语言类应用程序"><span class="nav-text">2.4 使用语法分析树来构建语言类应用程序</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-5-语法分析树监听器和访问器"><span class="nav-text">2.5 语法分析树监听器和访问器</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-5-1-语法分析树监听器"><span class="nav-text">2.5.1 语法分析树监听器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-5-2-语法分析树访问器"><span class="nav-text">2.5.2 语法分析树访问器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-6-术语总结"><span class="nav-text">2.6 术语总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#第三章-入门"><span class="nav-text">第三章 入门</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -1030,6 +579,21 @@
 
   
 
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
 
 </body>
 </html>
