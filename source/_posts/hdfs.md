@@ -275,8 +275,6 @@ categories:
    start-dfs.sh
    ```
 
-### 使用
-
 ### PS
 
 #### zookeeper三个端口的作用
@@ -284,6 +282,154 @@ categories:
 * 2181：对cline端提供服务
 * 3888：选举leader使用
 * 2888：集群内机器通讯使用（Leader监听此端口）
+
+
+
+## 权限
+
+hdfs是一个文件系统
+
+* 类unix、linux
+* hdfs没有相关命令和接口去创建用户
+  * 信任客户端 
+    * 默认情况使用的 操作系统提供的用户
+    * 扩展kerberos、LDAP （集成第三方用户认证系统）
+  * 有超级用户的概念
+    * linux系统重的超级用户：root
+    * hdfs系统中超级用：namenode进程的启动用户
+  * 权限概念
+    * hdfs的权限是自己控制的 来自于hdfs的超级用户
+
+
+
+## HDFS开发
+
+```Java
+@Test
+public void blocks() throws Exception {
+
+    Path file = new Path("/user/god/data.txt");
+    FileStatus fss = fs.getFileStatus(file);
+    BlockLocation[] blks = fs.getFileBlockLocations(fss, 0, fss.getLen());
+    for (BlockLocation b : blks) {
+        System.out.println(b);
+    }
+//        0,        1048576,        node04,node02  A
+//        1048576,  540319,         node04,node03  B
+    //计算向数据移动~！
+    //其实用户和程序读取的是文件这个级别~！并不知道有块的概念~！
+    FSDataInputStream in = fs.open(file);  //面向文件打开的输入流  无论怎么读都是从文件开始读起~！
+
+//        blk01: he
+//        blk02: llo msb 66231
+
+    in.seek(1048576);
+    //计算向数据移动后，期望的是分治，只读取自己关心（通过seek实现），同时，具备距离的概念（优先和本地的DN获取数据--框架的默认机制）
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+    System.out.println((char)in.readByte());
+}
+```
+
+
+
+# MapReduce
+
+## 计算模型
+
+* Map：以一条记录为记录做映射
+
+* Reduce：以一组为单位做计算
+  * 什么叫做一组？按某种规律分组
+  * 依赖一种数据格式 Key：Value
+  * Key：Value 由map映射实现
+
+
+
+* Map：
+  * 映射、变换、过滤
+  * 1进N出
+* Reduce：
+  * 分解、缩小、归纳
+  * 一组近N出
+* （KEY,VALUE）：
+  * 键值对的键划分数据分组
+
+
+
+切片
+
+* 控制粒度（并行度）
+* 一个切片对应一个map
+
+
+
+
+
+![MapReduce执行流程](https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/MapReduce%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B-20230709-17:00:59.png)
+
+数据已一条记录为单位经过map方法映射成KV，相同key为一组，这一组数据调用一次reduce方法，在方法内迭代计算着一组数据。
+
+
+
+* Bolck > split
+
+  * 1:1
+
+  * N:1
+
+  * 1:N
+
+* Split > map
+
+  * 1:1
+
+* Map > reduce
+
+  * N:1
+  * N:N
+  * 1:1
+  * 1:N
+
+* Group(key) > partition
+
+  * 1:1
+  * N:1
+  * N:N
+  * *1:N*（只会进到其中一个partition）
+
+
+
+
+
+### 细节
+
+![MapReduce执行流程-细](https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/MapReduce%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B-%E7%BB%86-20230709-17:04:50.png)
+
+1. 切片会格式化出记录，以记录为单位调用map方法
+2. map的输出映射成KV，KV会参与分区计算，拿着key算出P（分区号），得到KVP
+   1. 内存缓存区大小默认128MB
+3. 内存缓存区溢写时，做一个2次排序：分区有序，且分区内key有序，
+4. mapTask的输出是一个文件，存在本地的文件系统中
+   1. 如果文件不按分区排序，就会导致IO很高，每个reduce都会打开文件，重头遍历到尾
+   2. 按照缓存区大小落地磁盘，就会得到一批内部有序外部无序的文件，再做一个归并排序即可得到一个内部有序的文件，每个reduce即可按序取一次即可
+5. reduce的归并排序其实可以和reduce方法的计算同事发生，尽量减少IO
+   1. 因为有迭代器模式的支持
+
+
+
+迭代器模式是批量计算中非常优美的实现形式。
+
+
 
 
 
