@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"sq-list.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"livere","storage":true,"lazyload":false,"nav":null,"activeClass":"livere"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="启蒙基础知识 内存寻址的速度比IO寻址快10万倍 IO速度大概在500MB每秒~1-2GB每秒（根据磁盘类型区分） 分而治之 并行计算 计算要往数据移动 数据本地化读取 为什么hadoop项目中还要开发一个分布式文件系统？为了更好的支持分布式计算  HDFS存储模型 文件线性按字节切割成块（block），具有offset，id 文件与文件的block大小可以不一样 一个文件除最后一个block，其">
+<meta property="og:type" content="article">
+<meta property="og:title" content="hdfs">
+<meta property="og:url" content="https://sq-list.github.io/2022/07/11/hdfs/index.html">
+<meta property="og:site_name" content="Sq-List&#39;s Blog">
+<meta property="og:description" content="启蒙基础知识 内存寻址的速度比IO寻址快10万倍 IO速度大概在500MB每秒~1-2GB每秒（根据磁盘类型区分） 分而治之 并行计算 计算要往数据移动 数据本地化读取 为什么hadoop项目中还要开发一个分布式文件系统？为了更好的支持分布式计算  HDFS存储模型 文件线性按字节切割成块（block），具有offset，id 文件与文件的block大小可以不一样 一个文件除最后一个block，其">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E6%9E%B6%E6%9E%84-20220711-17:03:23.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS-block%E5%89%AF%E6%9C%AC-20220711-17:06:18.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/SNN-20220717-17:11:44.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E5%86%99%E6%B5%81%E7%A8%8B-20220717-17:56:17.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E8%AF%BB%E6%B5%81%E7%A8%8B-20220724-10:37:17.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS-HA-20220831-17:34:56.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/MapReduce%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B-20230709-17:00:59.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/MapReduce%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B-%E7%BB%86-20230709-17:04:50.png">
+<meta property="article:published_time" content="2022-07-11T02:23:09.000Z">
+<meta property="article:modified_time" content="2023-08-19T08:38:03.882Z">
+<meta property="article:author" content="Sq-List">
+<meta property="article:tag" content="hadoop">
+<meta property="article:tag" content="hdfs">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E6%9E%B6%E6%9E%84-20220711-17:03:23.png">
+
+<link rel="canonical" href="https://sq-list.github.io/2022/07/11/hdfs/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>hdfs | Sq-List's Blog</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1cccf784b58b1c741bb89968d188ac94";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Sq-List's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/sq-list" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2022/07/11/hdfs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
+      <meta itemprop="name" content="Sq-List">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sq-List's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          hdfs
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-07-11 10:23:09" itemprop="dateCreated datePublished" datetime="2022-07-11T10:23:09+08:00">2022-07-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-08-19 16:38:03" itemprop="dateModified" datetime="2023-08-19T16:38:03+08:00">2023-08-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="启蒙"><a href="#启蒙" class="headerlink" title="启蒙"></a>启蒙</h1><h2 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h2><ul>
+<li>内存寻址的速度比IO寻址快10万倍</li>
+<li>IO速度大概在500MB每秒~1-2GB每秒（根据磁盘类型区分）</li>
+<li><strong>分而治之</strong></li>
+<li>并行计算</li>
+<li>计算要往数据移动</li>
+<li>数据本地化读取</li>
+<li>为什么hadoop项目中还要开发一个分布式文件系统？<br>为了<strong>更好的支持分布式计算</strong></li>
+</ul>
+<h1 id="HDFS"><a href="#HDFS" class="headerlink" title="HDFS"></a>HDFS</h1><h2 id="存储模型"><a href="#存储模型" class="headerlink" title="存储模型"></a>存储模型</h2><ul>
+<li>文件线性按字节切割成块（block），具有offset，id</li>
+<li>文件与文件的block大小可以不一样</li>
+<li>一个文件除最后一个block，其他block大小一致</li>
+<li>block的大小依据硬件的I/O特性调整<ul>
+<li>1.X 64MB  </li>
+<li>2.X 128MB</li>
+<li>256MB</li>
+</ul>
+</li>
+<li>block被分散存放在集群的节点中，具有location</li>
+<li>block具有副本（replication），没有主从概念，副本不能出现在同一个节点</li>
+<li>副本是满足可靠性和性能的关键</li>
+<li>文件上传可以指定block大小和副本数，上传后只能修改副本数</li>
+<li>一次写入多次读取，<strong>不支持修改</strong></li>
+<li>支持追加数据</li>
+</ul>
+<h2 id="架构设计"><a href="#架构设计" class="headerlink" title="架构设计"></a>架构设计</h2><ul>
+<li>主从（master/slaves）架构</li>
+<li>由一个NameNode和一些DataNode组成</li>
+<li>面向文件包含：文件数据（data）和文件元数据（metadata）</li>
+<li>NameNode（主）负责存储和管理文件元数据，并维护了一个层次性的文件目录树</li>
+<li>DataNode（从）负责存储文件数据（block块），并提供block的读写</li>
+<li>DataNode与NameNode维持心跳，并汇报自己持有的block信息</li>
+<li>Client与NameNode交互文件元数据和DataNode交互文件block数据</li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E6%9E%B6%E6%9E%84-20220711-17:03:23.png" alt="HDFS架构"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS-block%E5%89%AF%E6%9C%AC-20220711-17:06:18.png" alt="HDFS-block副本"></p>
+<h2 id="角色（进程）功能"><a href="#角色（进程）功能" class="headerlink" title="角色（进程）功能"></a>角色（进程）功能</h2><h3 id="NameNode"><a href="#NameNode" class="headerlink" title="NameNode"></a>NameNode</h3><ul>
+<li>完全基于内存存储文件元数据、目录结构、文件block的映射</li>
+<li>需要持久化方案保证数据可靠性</li>
+<li>提供<strong>副本</strong>放置策略</li>
+</ul>
+<h3 id="DataNode"><a href="#DataNode" class="headerlink" title="DataNode"></a>DataNode</h3><ul>
+<li>基于本地磁盘存储block（文件的形式）</li>
+<li>保存block的校验和数据，保证block的可靠性</li>
+<li>与NameNode保持心跳，汇报block列表状态</li>
+</ul>
+<h2 id="元数据持久化"><a href="#元数据持久化" class="headerlink" title="元数据持久化"></a>元数据持久化</h2><ul>
+<li>任何对文件系统元数据产生修改的操作，NameNode都会使用一种称为EditLog的事务日志记录下来</li>
+<li>使用FsImage存储内存所有的元数据状态</li>
+<li>使用本地磁盘保存EditLog和FsImage</li>
+</ul>
+<h3 id="两种技术"><a href="#两种技术" class="headerlink" title="两种技术"></a>两种技术</h3><h4 id="日志文件"><a href="#日志文件" class="headerlink" title="日志文件"></a>日志文件</h4><ul>
+<li>完整性，数据丢失少</li>
+<li>恢复数据慢，占空间</li>
+</ul>
+<h4 id="镜像、快照"><a href="#镜像、快照" class="headerlink" title="镜像、快照"></a>镜像、快照</h4><ul>
+<li><p>不能实时保存，需要间隔（小时、天）；容易丢失数据</p>
+</li>
+<li><p>恢复速度快过 日志文件</p>
+</li>
+</ul>
+<h3 id="结合"><a href="#结合" class="headerlink" title="结合"></a>结合</h3><ul>
+<li>NameNode使用了FsImage+EditLog整合的方案：<ul>
+<li>滚动将增量的EditLog更新到FsImage，以保证更近时点的FsImage和更小的EditLog体积</li>
+</ul>
+</li>
+</ul>
+<h2 id="安全模式"><a href="#安全模式" class="headerlink" title="安全模式"></a>安全模式</h2><ul>
+<li><p>HDFS搭建时会格式化，格式化操作会产生一个空的FsImage。</p>
+<ul>
+<li><code>hdfs namenode -format</code></li>
+</ul>
+</li>
+<li><p>当NameNode启动时，它从硬盘中读取读取EditLog和FsImage。</p>
+</li>
+<li><p>将所有EditLog中的事务作用在内存中的FsImage上。</p>
+</li>
+<li><p>将这个新版本的FsImage从内存中保存到本地磁盘上，然后删除旧的EditLog（因为这个就的EditLog的事务都已经作用在FsImage上了）</p>
+</li>
+<li></li>
+<li><p>NameNode启动后会进入一个称为安全模式的特殊状态。</p>
+</li>
+<li><p>处于安全模式的NameNode是不会进行数据块的复制的。</p>
+</li>
+<li><p>NameNode会从所有DataNode接收心跳信号和块状态报告。</p>
+</li>
+<li><p>每当NameNode检测确认某个数据块的副本数量达到这个最小值，那么该数据块就会被认为是副本安全（safely replicated）的。</p>
+</li>
+<li><p>在一定百分比（这个参数可配置）的数据块被NameNode检测确认是安全之后（加上一个额外的30秒等待时间），NameNode将推出安全模式状态。</p>
+</li>
+<li><p>接下来它会确认还有那些数据块的副本没有达到指定数目，并将这些数据块复制到其他DataNode上。</p>
+</li>
+</ul>
+<h2 id="SecondaryNameNode（SNN）"><a href="#SecondaryNameNode（SNN）" class="headerlink" title="SecondaryNameNode（SNN）"></a>SecondaryNameNode（SNN）</h2><ul>
+<li><strong>在非HA模式（1.X没有HA模式）下</strong>，SNN一般是独立的节点，周期完成对NN的EditLo向FsImage合并，减少EditLog大小，减少EditLog大小，减少NN启动时间</li>
+<li>根据配置文件设置的时间间隔 fs.checkpoint.period 默认3600秒</li>
+<li>根据配置文件设置EditLog大小 fs.checkpoint.size 规定EditLogs文件最大值默认64MB</li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/SNN-20220717-17:11:44.png" alt="SNN"></p>
+<h2 id="副本放置策略"><a href="#副本放置策略" class="headerlink" title="副本放置策略"></a>副本放置策略</h2><ul>
+<li>第一个副本：放置在上传文件的DataNode；如果是集群外提交，则随机挑选一台磁盘不太满，CPU不太忙的节点。</li>
+<li>第二个副本：放置在与第一个副本不同的机架的节点上。</li>
+<li>第三个副本：与第二个副本相同机架的节点。</li>
+<li>更多副本：随机节点。</li>
+</ul>
+<h2 id="读写流程"><a href="#读写流程" class="headerlink" title="读写流程"></a>读写流程</h2><h3 id="写流程"><a href="#写流程" class="headerlink" title="写流程"></a>写流程</h3><p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E5%86%99%E6%B5%81%E7%A8%8B-20220717-17:56:17.png" alt=""></p>
+<ul>
+<li>Client和NameNode连接创建文件元数据</li>
+<li>NameNode判定元数据是否有效</li>
+<li>NameNode处发副本放置策略，返回一个有序的DataNode列表</li>
+<li>Client和DataNode建立Pipeline连接</li>
+<li>Client将块切分成packet（64KB），并使用chunk（512B）+chucksum（4B）填充</li>
+<li>Client将packet放入发送队列dataqueue中，并向第一个DataNode发送</li>
+<li>第一个DataNode收到packet后，本地保存并发送给第二个DataNode</li>
+<li>第二个DataNode收到packet后，本地保存并发送给第三个DataNode</li>
+<li>这一个过程中，上游节点同时发送下一个packet</li>
+<li>生活中类比工厂的流水线；结论：流式其实也是变种的并行计算</li>
+<li>HDFS使用这种传输方式，副本数对于Client是透明的</li>
+<li>当block传输完成，DataNode各自向NameNode汇报，同时Client继续传输下一个block</li>
+<li>所以 Client的传输和block的汇报也是并行的</li>
+<li>Client只需要想建立连接的DataNode传输，不用管DataNode与DataNode间的传输（DataNode宕机之类 ），NameNode会保证集群中每个Block的副本数</li>
+</ul>
+<h3 id="读流程"><a href="#读流程" class="headerlink" title="读流程"></a>读流程</h3><p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E8%AF%BB%E6%B5%81%E7%A8%8B-20220724-10:37:17.png" alt="HDFS读流程"></p>
+<ul>
+<li>为了降低是整体的带宽消耗和读取延时，HDFS会尽量让读取程序读取离它最近的副本。</li>
+<li>如果在读取程序的同一个机架上有一个副本。那么就读该副本。</li>
+<li>如果一个HDFS集群跨越多个数据中心，那么客户端也将首先读本地数据中心的副本。</li>
+<li>语义：下载一个文件<ul>
+<li>Client和NameNode交互文件元数据获取所有的fileBlockLocation</li>
+<li>NameNode会按距离策略排序返回</li>
+<li>Client尝试下载block并校验数据完整性</li>
+</ul>
+</li>
+<li>语义：下载一个文件其实是获取文件的所有block元数据，那么子集获取某些block也应该成立<ul>
+<li><font color="#dd0000"> HDFS支持Client给出文件的offset自定义连接哪些block的DataName，自定义获取数据</font></li>
+<li><font color="#dd0000"> 这个是支持计算层的分治，并行计算的核心</font></li>
+</ul>
+</li>
+</ul>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><h4 id="NameNode-1"><a href="#NameNode-1" class="headerlink" title="NameNode"></a>NameNode</h4><ul>
+<li>NameNode只有在重启集群后，可使用之前会将EditLog写入FsImage，其他在运行的情况下只能通过 SecondNameNode进行</li>
+</ul>
+<h2 id="目前存在问题"><a href="#目前存在问题" class="headerlink" title="目前存在问题"></a>目前存在问题</h2><h3 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h3><ul>
+<li>主从集群：结构相对简单，主与从从协作</li>
+<li>主：单点，数据一致好掌握</li>
+<li>问题：<ul>
+<li>单点故障，集群整体不可用</li>
+<li>压力过大，内存受限</li>
+</ul>
+</li>
+</ul>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><ul>
+<li>单点故障：<ul>
+<li>高可用方案：HA</li>
+<li>多个NameNode、主备切换</li>
+<li>2.X提出HA 但是只支持一主一备；3.X能够一主多备，最多支持5备，建议3备</li>
+</ul>
+</li>
+<li>压力过大，内存受限：<ul>
+<li>联邦机制：Federation（元数据分片）</li>
+<li>多个NameNode，管理不同的元数据</li>
+</ul>
+</li>
+</ul>
+<h2 id="HA"><a href="#HA" class="headerlink" title="HA"></a>HA</h2><p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS-HA-20220831-17:34:56.png" alt="HDFS-HA"></p>
+<h3 id="Paxos算法"><a href="#Paxos算法" class="headerlink" title="Paxos算法"></a>Paxos算法</h3><ul>
+<li>消息传递的一致性算法。</li>
+<li>这个算法被认为是类似算法中最有效的。</li>
+<li>该算法覆盖全部场景的一致性。</li>
+<li>每种技术会根据子技术的特征选择简化算法实现。</li>
+<li>传递：NN之间通过一个可靠的传输技术，最终数据能同步就可以</li>
+</ul>
+<h3 id="简化思路"><a href="#简化思路" class="headerlink" title="简化思路"></a>简化思路</h3><ul>
+<li>分布式节点是否明确</li>
+<li>节点权重是否明确</li>
+<li>强一致性破坏可用性</li>
+<li>过半通过 可以中和一致性和可用性</li>
+<li>最简单的自我协调实现：主从</li>
+<li>主的选举：明确节点数量和权重</li>
+<li>主从的职能：<ul>
+<li>主：增删改查</li>
+<li>从：查，增删改传递给主</li>
+<li>主与从：过半数同步数据</li>
+</ul>
+</li>
+</ul>
+<h3 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h3><ul>
+<li>多台NN主备模式，Active和Standby状态<ul>
+<li>Active对外提供服务</li>
+</ul>
+</li>
+<li>增加journalNode角色（&gt;3台），负责同步NN的editlog<ul>
+<li>最终一致性</li>
+</ul>
+</li>
+<li>增加zkfc角色（与NN同台），通过zookeeper集群协调NN的主从选举和切换<ul>
+<li>事件回调机制</li>
+</ul>
+</li>
+<li>DN同时向NN汇报block清单</li>
+</ul>
+<h3 id="PS"><a href="#PS" class="headerlink" title="PS"></a>PS</h3><ul>
+<li>开启了HA的话，SNN会被替换成standby NN，checkpoint过程会直接交给standby NN来负责。active NN会将edits文件同时写到本地与共享存储（比如QJM方案就是JournalNode集群）上去，standby NN从JournalNode集群拉取edits文件，和从active NN拉取的fsimage进行合并，并保持fsimage文件与active NameNode的同步。</li>
+</ul>
+<h2 id="部署流程"><a href="#部署流程" class="headerlink" title="部署流程"></a>部署流程</h2><h3 id="基础设施"><a href="#基础设施" class="headerlink" title="基础设施"></a>基础设施</h3><h4 id="ssh免密"><a href="#ssh免密" class="headerlink" title="ssh免密"></a>ssh免密</h4><ol>
+<li>启动start-dfs.sh脚本的机器需要将公开的密钥分发给别的节点</li>
+<li>在HA模式下，每一个NN同机器会启动zkfc<ol>
+<li>zkfc公用免密的方式控制自己和其他NN节点的NN状态</li>
+</ol>
+</li>
+</ol>
+<h3 id="应用搭建"><a href="#应用搭建" class="headerlink" title="应用搭建"></a>应用搭建</h3><ol>
+<li>HA依赖ZK 搭建ZK集群</li>
+<li>修改hadoop的配置文件，并集群间同步</li>
+</ol>
+<h3 id="初始化启动"><a href="#初始化启动" class="headerlink" title="初始化启动"></a>初始化启动</h3><ol>
+<li><p>先启动 JNN</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop-daemon.sh start journalnode</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>选择一个NN做格式化</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hdfs namenode format</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动这个格式化的NN，以备另外几台同步</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop-daemon.sh start namenode</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>在另外几台NN中</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">   hdfs namenode -bootstrapStandby</span><br><span class="line"></span><br><span class="line">5. 格式化ZK</span><br><span class="line">   ```shell</span><br><span class="line">   hdfs zkfc -formatZK</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动hdfs</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">start-dfs.sh</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h3 id="PS-1"><a href="#PS-1" class="headerlink" title="PS"></a>PS</h3><h4 id="zookeeper三个端口的作用"><a href="#zookeeper三个端口的作用" class="headerlink" title="zookeeper三个端口的作用"></a>zookeeper三个端口的作用</h4><ul>
+<li>2181：对cline端提供服务</li>
+<li>3888：选举leader使用</li>
+<li>2888：集群内机器通讯使用（Leader监听此端口）</li>
+</ul>
+<h2 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h2><p>hdfs是一个文件系统</p>
+<ul>
+<li>类unix、linux</li>
+<li>hdfs没有相关命令和接口去创建用户<ul>
+<li>信任客户端 <ul>
+<li>默认情况使用的 操作系统提供的用户</li>
+<li>扩展kerberos、LDAP （集成第三方用户认证系统）</li>
+</ul>
+</li>
+<li>有超级用户的概念<ul>
+<li>linux系统重的超级用户：root</li>
+<li>hdfs系统中超级用：namenode进程的启动用户</li>
+</ul>
+</li>
+<li>权限概念<ul>
+<li>hdfs的权限是自己控制的 来自于hdfs的超级用户</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="HDFS开发"><a href="#HDFS开发" class="headerlink" title="HDFS开发"></a>HDFS开发</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">blocks</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">    Path file = <span class="keyword">new</span> Path(<span class="string">"/user/god/data.txt"</span>);</span><br><span class="line">    FileStatus fss = fs.getFileStatus(file);</span><br><span class="line">    BlockLocation[] blks = fs.getFileBlockLocations(fss, <span class="number">0</span>, fss.getLen());</span><br><span class="line">    <span class="keyword">for</span> (BlockLocation b : blks) &#123;</span><br><span class="line">        System.out.println(b);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">//        0,        1048576,        node04,node02  A</span></span><br><span class="line"><span class="comment">//        1048576,  540319,         node04,node03  B</span></span><br><span class="line">    <span class="comment">//计算向数据移动~！</span></span><br><span class="line">    <span class="comment">//其实用户和程序读取的是文件这个级别~！并不知道有块的概念~！</span></span><br><span class="line">    FSDataInputStream in = fs.open(file);  <span class="comment">//面向文件打开的输入流  无论怎么读都是从文件开始读起~！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//        blk01: he</span></span><br><span class="line"><span class="comment">//        blk02: llo msb 66231</span></span><br><span class="line"></span><br><span class="line">    in.seek(<span class="number">1048576</span>);</span><br><span class="line">    <span class="comment">//计算向数据移动后，期望的是分治，只读取自己关心（通过seek实现），同时，具备距离的概念（优先和本地的DN获取数据--框架的默认机制）</span></span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="MapReduce"><a href="#MapReduce" class="headerlink" title="MapReduce"></a>MapReduce</h1><h2 id="计算模型"><a href="#计算模型" class="headerlink" title="计算模型"></a>计算模型</h2><ul>
+<li><p>Map：以一条记录为记录做映射</p>
+</li>
+<li><p>Reduce：以一组为单位做计算</p>
+<ul>
+<li>什么叫做一组？按某种规律分组</li>
+<li>依赖一种数据格式 Key：Value</li>
+<li>Key：Value 由map映射实现</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>Map：<ul>
+<li>映射、变换、过滤</li>
+<li>1进N出</li>
+</ul>
+</li>
+<li>Reduce：<ul>
+<li>分解、缩小、归纳</li>
+<li>一组近N出</li>
+</ul>
+</li>
+<li>（KEY,VALUE）：<ul>
+<li>键值对的键划分数据分组</li>
+</ul>
+</li>
+</ul>
+<p>切片</p>
+<ul>
+<li>控制粒度（并行度）</li>
+<li>一个切片对应一个map</li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/MapReduce%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B-20230709-17:00:59.png" alt="MapReduce执行流程"></p>
+<p>数据已一条记录为单位经过map方法映射成KV，相同key为一组，这一组数据调用一次reduce方法，在方法内迭代计算着一组数据。</p>
+<ul>
+<li><p>Bolck &gt; split</p>
+<ul>
+<li><p>1:1</p>
+</li>
+<li><p>N:1</p>
+</li>
+<li><p>1:N</p>
+</li>
+</ul>
+</li>
+<li><p>Split &gt; map</p>
+<ul>
+<li>1:1</li>
+</ul>
+</li>
+<li><p>Map &gt; reduce</p>
+<ul>
+<li>N:1</li>
+<li>N:N</li>
+<li>1:1</li>
+<li>1:N</li>
+</ul>
+</li>
+<li><p>Group(key) &gt; partition</p>
+<ul>
+<li>1:1</li>
+<li>N:1</li>
+<li>N:N</li>
+<li><em>1:N</em>（只会进到其中一个partition）</li>
+</ul>
+</li>
+</ul>
+<h3 id="细节"><a href="#细节" class="headerlink" title="细节"></a>细节</h3><p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/MapReduce%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B-%E7%BB%86-20230709-17:04:50.png" alt="MapReduce执行流程-细"></p>
+<ol>
+<li>切片会格式化出记录，以记录为单位调用map方法</li>
+<li>map的输出映射成KV，KV会参与分区计算，拿着key算出P（分区号），得到KVP<ol>
+<li>内存缓存区大小默认128MB</li>
+</ol>
+</li>
+<li>内存缓存区溢写时，做一个2次排序：分区有序，且分区内key有序，</li>
+<li>mapTask的输出是一个文件，存在本地的文件系统中<ol>
+<li>如果文件不按分区排序，就会导致IO很高，每个reduce都会打开文件，重头遍历到尾</li>
+<li>按照缓存区大小落地磁盘，就会得到一批内部有序外部无序的文件，再做一个归并排序即可得到一个内部有序的文件，每个reduce即可按序取一次即可</li>
+</ol>
+</li>
+<li>reduce的归并排序其实可以和reduce方法的计算同事发生，尽量减少IO<ol>
+<li>因为有迭代器模式的支持</li>
+</ol>
+</li>
+</ol>
+<p>迭代器模式是批量计算中非常优美的实现形式。</p>
+
+    </div>
+
+    
+    
+    
+      
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Sq-List
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://sq-list.github.io/2022/07/11/hdfs/" title="hdfs">https://sq-list.github.io/2022/07/11/hdfs/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/hadoop/" rel="tag"><i class="fa fa-tag"></i> hadoop</a>
+              <a href="/tags/hdfs/" rel="tag"><i class="fa fa-tag"></i> hdfs</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/31/%E7%AE%97%E6%B3%95-%E5%B7%AE%E5%88%86/" rel="prev" title="算法-差分">
+      <i class="fa fa-chevron-left"></i> 算法-差分
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/01/31/IOMulti/" rel="next" title="（转载）Linux IO模式及select、poll、epoll详解">
+      （转载）Linux IO模式及select、poll、epoll详解 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80OTc3Ny8yNjI2OA=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#启蒙"><span class="nav-text">启蒙</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#基础知识"><span class="nav-text">基础知识</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HDFS"><span class="nav-text">HDFS</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#存储模型"><span class="nav-text">存储模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#架构设计"><span class="nav-text">架构设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#角色（进程）功能"><span class="nav-text">角色（进程）功能</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#NameNode"><span class="nav-text">NameNode</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DataNode"><span class="nav-text">DataNode</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#元数据持久化"><span class="nav-text">元数据持久化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#两种技术"><span class="nav-text">两种技术</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#日志文件"><span class="nav-text">日志文件</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#镜像、快照"><span class="nav-text">镜像、快照</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结合"><span class="nav-text">结合</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安全模式"><span class="nav-text">安全模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SecondaryNameNode（SNN）"><span class="nav-text">SecondaryNameNode（SNN）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#副本放置策略"><span class="nav-text">副本放置策略</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#读写流程"><span class="nav-text">读写流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#写流程"><span class="nav-text">写流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读流程"><span class="nav-text">读流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他"><span class="nav-text">其他</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NameNode-1"><span class="nav-text">NameNode</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#目前存在问题"><span class="nav-text">目前存在问题</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#思路"><span class="nav-text">思路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#解决方案"><span class="nav-text">解决方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HA"><span class="nav-text">HA</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Paxos算法"><span class="nav-text">Paxos算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#简化思路"><span class="nav-text">简化思路</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#方案"><span class="nav-text">方案</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PS"><span class="nav-text">PS</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#部署流程"><span class="nav-text">部署流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基础设施"><span class="nav-text">基础设施</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ssh免密"><span class="nav-text">ssh免密</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#应用搭建"><span class="nav-text">应用搭建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#初始化启动"><span class="nav-text">初始化启动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PS-1"><span class="nav-text">PS</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#zookeeper三个端口的作用"><span class="nav-text">zookeeper三个端口的作用</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#权限"><span class="nav-text">权限</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HDFS开发"><span class="nav-text">HDFS开发</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#MapReduce"><span class="nav-text">MapReduce</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#计算模型"><span class="nav-text">计算模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#细节"><span class="nav-text">细节</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sq-List"
+      src="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
+  <p class="site-author-name" itemprop="name">Sq-List</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">13</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/sq-list" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;sq-list" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sq-List</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">79k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:11</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="//cdn.jsdelivr.net/gh/theme-next/theme-next-three@1/three.min.js"></script>
+    <script defer src="//cdn.jsdelivr.net/gh/theme-next/theme-next-three@latest/canvas_lines.min.js"></script>
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

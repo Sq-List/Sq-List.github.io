@@ -170,6 +170,648 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2023/01/31/IOMulti/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
+      <meta itemprop="name" content="Sq-List">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sq-List's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/01/31/IOMulti/" class="post-title-link" itemprop="url">（转载）Linux IO模式及select、poll、epoll详解</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2023-01-31 19:43:52" itemprop="dateCreated datePublished" datetime="2023-01-31T19:43:52+08:00">2023-01-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-08-19 16:37:56" itemprop="dateModified" datetime="2023-08-19T16:37:56+08:00">2023-08-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/IO/" itemprop="url" rel="index"><span itemprop="name">IO</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>8.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>8 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>本文来源：<a href="https://segmentfault.com/a/1190000003063859" target="_blank" rel="noopener">原文地址</a></p>
+<blockquote>
+<p>本文讨论的背景是Linux环境下的network IO。</p>
+</blockquote>
+<h1 id="一、概念说明"><a href="#一、概念说明" class="headerlink" title="一、概念说明"></a>一、概念说明</h1><h2 id="用户空间与内核空间"><a href="#用户空间与内核空间" class="headerlink" title="用户空间与内核空间"></a>用户空间与内核空间</h2><p>现在操作系统都是采用虚拟存储器，那么对32位操作系统而言，它的寻址空间（虚拟存储空间）为4G（2的32次方）。操作系统的核心是内核，独立于普通的应用程序，可以访问受保护的内存空间，也有访问底层硬件设备的所有权限。为了保证用户进程不能直接操作内核（kernel），保证内核的安全，操心系统将虚拟空间划分为两部分，一部分为内核空间，一部分为用户空间。针对linux操作系统而言，将最高的1G字节（从虚拟地址0xC0000000到0xFFFFFFFF），供内核使用，称为内核空间，而将较低的3G字节（从虚拟地址0x00000000到0xBFFFFFFF），供各个进程使用，称为用户空间。</p>
+<h2 id="进程切换"><a href="#进程切换" class="headerlink" title="进程切换"></a>进程切换</h2><p>了控制进程的执行，内核必须有能力挂起正在CPU上运行的进程，并恢复以前挂起的某个进程的执行。这种行为被称为进程切换。因此可以说，任何进程都是在操作系统内核的支持下运行的，是与内核紧密相关的。</p>
+<p>从一个进程的运行转到另一个进程上运行，这个过程中经过下面这些变化：</p>
+<ol>
+<li>保存处理机上下文，包括程序计数器和其他寄存器。</li>
+<li>更新PCB信息。</li>
+<li>把进程的PCB移入相应的队列，如就绪、在某事件阻塞等队列。</li>
+<li>选择另一个进程执行，并更新其PCB。</li>
+<li>更新内存管理的数据结构。</li>
+<li>恢复处理机上下文。</li>
+</ol>
+<p>注：<strong>总而言之就是很耗资源</strong>，具体的可以参考这篇文章：<a href="http://guojing.me/linux-kernel-architecture/posts/process-switch/" target="_blank" rel="noopener">进程切换</a></p>
+<h2 id="进程的阻塞"><a href="#进程的阻塞" class="headerlink" title="进程的阻塞"></a>进程的阻塞</h2><p>正在执行的进程，由于期待的某些事件未发生，如请求系统资源失败、等待某种操作的完成、新数据尚未到达或无新工作做等，则由系统自动执行阻塞原语(Block)，使自己由运行状态变为阻塞状态。可见，进程的阻塞是进程自身的一种主动行为，也因此只有处于运行态的进程（获得CPU），才可能将其转为阻塞状态。<code>当进程进入阻塞状态，是不占用CPU资源的</code>。</p>
+<h2 id="文件描述符fd"><a href="#文件描述符fd" class="headerlink" title="文件描述符fd"></a>文件描述符fd</h2><p>文件描述符（File descriptor）是计算机科学中的一个术语，是一个用于表述指向文件的引用的抽象化概念。</p>
+<p>文件描述符在形式上是一个非负整数。实际上，它是一个索引值，指向内核为每一个进程所维护的该进程打开文件的记录表。当程序打开一个现有文件或者创建一个新文件时，内核向进程返回一个文件描述符。在程序设计中，一些涉及底层的程序编写往往会围绕着文件描述符展开。但是文件描述符这一概念往往只适用于UNIX、Linux这样的操作系统。</p>
+<h2 id="缓存-I-O"><a href="#缓存-I-O" class="headerlink" title="缓存 I/O"></a>缓存 I/O</h2><p>缓存 I/O 又被称作标准 I/O，大多数文件系统的默认 I/O 操作都是缓存 I/O。在 Linux 的缓存 I/O 机制中，操作系统会将 I/O 的数据缓存在文件系统的页缓存（page cache）中，也就是说，数据会先被拷贝到操作系统内核的缓冲区中，然后才会从操作系统内核的缓冲区拷贝到应用程序的地址空间。</p>
+<p><strong>缓存 I/O 的缺点：</strong><br>数据在传输过程中需要在应用程序地址空间和内核进行多次数据拷贝操作，这些数据拷贝操作所带来的 CPU 以及内存开销是非常大的。</p>
+<h1 id="二、IO模式"><a href="#二、IO模式" class="headerlink" title="二、IO模式"></a>二、IO模式</h1><p>刚才说了，对于一次IO访问（以read举例），数据会先被拷贝到操作系统内核的缓冲区中，然后才会从操作系统内核的缓冲区拷贝到应用程序的地址空间。所以说，当一个read操作发生时，它会经历两个阶段：</p>
+<ol>
+<li><strong>等待数据准备 (Waiting for the data to be ready)</strong><br>对应 数据被拷贝到操作系统内核的缓冲区</li>
+<li><strong>将数据从内核拷贝到进程中 (Copying the data from the kernel to the process)</strong></li>
+</ol>
+<p>正式因为这两个阶段，linux系统产生了下面五种网络模式的方案。</p>
+<ul>
+<li>阻塞 I/O（blocking IO）</li>
+<li>非阻塞 I/O（nonblocking IO）</li>
+<li>I/O 多路复用（ IO multiplexing）</li>
+<li>信号驱动 I/O（ signal driven IO）</li>
+<li>异步 I/O（asynchronous IO）</li>
+</ul>
+<p>注：由于signal driven IO在实际中并不常用，所以这只提及剩下的四种IO Model。</p>
+<h2 id="阻塞I-O（blocking-IO）"><a href="#阻塞I-O（blocking-IO）" class="headerlink" title="阻塞I/O（blocking IO）"></a>阻塞I/O（blocking IO）</h2><p>在linux中，默认情况下所有的socket都是blocking，一个典型的读操作流程大概是这样：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/view-20230131-19:58:32.png" alt="preview"></p>
+<p>当用户进程调用了recvfrom这个系统调用，kernel就开始了IO的第一个阶段：准备数据（对于网络IO来说，很多时候数据在一开始还没有到达。比如，还没有收到一个完整的UDP包。这个时候kernel就要等待足够的数据到来）。这个过程需要等待，也就是说数据被拷贝到操作系统内核的缓冲区中是需要一个过程的。而在用户进程这边，整个进程会被阻塞（当然，是进程自己选择的阻塞）。当kernel一直等到数据准备好了，它就会将数据从kernel中拷贝到用户内存，然后kernel返回结果，用户进程才解除block的状态，重新运行起来。</p>
+<blockquote>
+<p>所以，blocking IO的特点就是在IO执行的两个阶段都被block了。</p>
+</blockquote>
+<h2 id="非阻塞I-O（nonblocking-IO）"><a href="#非阻塞I-O（nonblocking-IO）" class="headerlink" title="非阻塞I/O（nonblocking IO）"></a>非阻塞I/O（nonblocking IO）</h2><p>liunx下，可以通过设置socket使其变为non-blocking。当对一个non-blocking socket执行读操作时，流程是这个样子：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/view-20230201143513333-20230201-14:35:14.png" alt="preview"></p>
+<p>当用户进程发出read操作时，如果kernel中的数据还没有准备好，那么它并不会block用户进程，而是立刻返回一个error。从用户进程角度讲，它发起一个read操作后，并不需要等待，而是马上就得到了一个结果。用户进程判断结果是一个error时，它就知道数据还没有准备好，于是它可以再次发送read操作。一旦kernel中的数据准备好了，并且又再次收到了用户进程的system call，那么它马上就将数据拷贝到了用户内存，然后返回。</p>
+<blockquote>
+<p>所以，nonblocking IO的特点是用户进程需要不断地主动询问kernel数据好了没有。</p>
+</blockquote>
+<h2 id="I-O多路复用（IO-multiplexing）"><a href="#I-O多路复用（IO-multiplexing）" class="headerlink" title="I/O多路复用（IO multiplexing）"></a>I/O多路复用（IO multiplexing）</h2><p>IO多路复用就是我们说的select，poll，epoll，有些地方也称这个IO方式为event driven IO。select/epoll的好处就在于单个process就可以同时处理多个网络连接的IO。它的基本原理就是select，poll，epoll这个function会不断地轮询所负责的所有socket，当某个socket有数据到达了，就通知用户进程。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/view-20230201144347141-20230201-14:43:47.png" alt="preview"></p>
+<p><code>当用户进程调用了select，那么整个进程会被block</code>，而同时，kernel会“监视”所有select负责的socket，当任何一个socket中的数据准备好了，select就会返回。这个时候用户进程再调用read操作，将数据从kernel拷贝到用户进程。</p>
+<blockquote>
+<p>所以，I/O多路复用的特点是通过一种机制，一个进程能同时等待多个文件描述符，而这些文件描述符（套接字描述符）其中的任意一个进入读就绪状态，select函数就可以返回。</p>
+</blockquote>
+<p>这个图和blocking IO的图其实并没有太大的不同，事实上，还更差一些。因为这里需要使用两个system call（select和recvfrom），而blocking IO只调用了一个system call（recvfrom）。但是，<strong>用select的优势在于它可以同时处理多个connection</strong>。</p>
+<p>所以，如果处理的连接数不是很高的话，使用select/epoll的web server不一定比使用multi-threading + blocking IO的web server性能更好，可能延迟还更大。<strong>select/epoll的优势并不是对于单个链接能处理的更快，而是在于能处理更多的连接</strong>。</p>
+<p>在IO多路复用中，实际中，对于每一个socket，一般都设置称为nonblocking，但是，如上图所示，整个用户的process其实是一直被block的。<strong>只不过process是被select这个函数block，而不是被socket IO给block</strong>。</p>
+<h2 id="异步I-O（asynchronous-IO）"><a href="#异步I-O（asynchronous-IO）" class="headerlink" title="异步I/O（asynchronous IO）"></a>异步I/O（asynchronous IO）</h2><p>linux下的异步IO其实用的很少。流程：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/view-20230202104132338-20230202-10:41:33.png" alt="preview"></p>
+<p>用户进程发起read操作之后，立刻就可以开始去做其他的事。而另一方面，从kernel的角度，当它收到一个异步read之后，首先它会立刻返回，所以不会对用户进程产生任何block。然后，kernel会等待数据准备完成，然后将数据拷贝到用户内存，当这一切都完成之后，kernel会给用户进程发送一个signal，告诉它read操作完成了。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><h3 id="blocking和non-blocking的区别"><a href="#blocking和non-blocking的区别" class="headerlink" title="blocking和non-blocking的区别"></a>blocking和non-blocking的区别</h3><p>调用blocking IO会一直block住对应的进程直到操作完成，而non-blocking IO在kernel还没准备数据的情况下会立刻返回。</p>
+<h3 id="synchronous-IO和asynchronous-IO的区别"><a href="#synchronous-IO和asynchronous-IO的区别" class="headerlink" title="synchronous IO和asynchronous IO的区别"></a>synchronous IO和asynchronous IO的区别</h3><p>在说明synchronous IO和asynchronous IO的区别之前，需要先给出两者的定义。POSIX的定义是这样子的：</p>
+<ul>
+<li>A synchronous I/O operation causes the requesting process to be blocked until that I/O operation completes;</li>
+<li>An asynchronous I/O operation does not cause the requesting process to be blocked;</li>
+</ul>
+<p>两者的区别在于synchronous IO做“IO operation”的时候会将process阻塞。按照这个定义，之前所述的blocking IO，non-blocking IO，IO multiplexing都属于synchronous IO。</p>
+<p>注：为什么non-blocking IO会算作synchronous IO。定义中所指的“IO operation”是指真实的IO操作，就是例子中的recvfrom这个system call。non-blocking IO在执行recvfrom这个system call的时候，如果kernel的数据没有准备好，这时候不会block进程。<strong>但是，当kernel中数据准备好的时候，recvfrom会将数据从kernel拷贝到用户内存中，这个时候进程是被block了，在这段时间内，进程是被block的。</strong></p>
+<p>而asynchronous IO则不一样，当进程发起IO操作之后，就直接返回再也不理睬了，直到kernel发送一个信号，告诉进程说IO完成。在这个整个过程中，进程完全没有被block。</p>
+<h3 id="各个IO-Model的比较如图所示："><a href="#各个IO-Model的比较如图所示：" class="headerlink" title="各个IO Model的比较如图所示："></a>各个IO Model的比较如图所示：</h3><p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/view-20230202143739691-20230202-14:37:40.png" alt="preview"></p>
+<p>有图可以发现，nonblocking IO和asynchronous IO的区别还是很明显的。nonblocking IO中，虽然进程大部分时间都不会被block，但是它仍然要求进程去主动的check，并且当数据准备完成以后，也需要进程主动的再次调用recvfrom来将数据拷贝到用户内存。而asynchronous IO则完全不同，他就像是用户进程将整个IO操作交给了他人（kernel）完成，然后他人做完之后发信号通知，在此期间，用户进程不需要去检查IO操作的状态，也不需要主动的去拷贝数据。</p>
+<h1 id="三-IO多路复用之select、poll、epoll"><a href="#三-IO多路复用之select、poll、epoll" class="headerlink" title="三 IO多路复用之select、poll、epoll"></a>三 IO多路复用之select、poll、epoll</h1><p>select、poll、epoll都是IO多路复用的机制。IO多路复用就是通过一种机制，一个进程可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或写就绪），能够通知程序进程相应的读写操作。但<strong>select、poll、epoll本质上都是同步IO</strong>，<strong>因为他们都需要在读写事件就绪后自己负责进行读写，异步IO的实现会负责把数据从内核拷贝到用户空间</strong>。</p>
+<h2 id="select"><a href="#select" class="headerlink" title="select"></a>select</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">select</span> <span class="params">(<span class="keyword">int</span> n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>select函数监视的文件描述符分3类，分别是writefds、readfds、exceptfds。调用后select函数会阻塞，直到有描述符就绪（有数据可读、可写或者有异常），或者超时（timeout指定等待时间，如果立即返回设为null即可），函数返回。<strong>当select函数返回后，可以通过遍历fdset，来找到就绪的描述符</strong>。</p>
+<p>select目前几乎在所有的平台上支持，其良好跨平台支持也是它的一个优点。select的一个缺点在于单个进程能够监视的文件描述符的数量存在最大限制，在Linux上一般为1024个，可以通过修改宏定义甚至重新编译内核的方式提升这一限制，但是这样也会造成效率的降低。</p>
+<h2 id="poll"><a href="#poll" class="headerlink" title="poll"></a>poll</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">poll</span> <span class="params">(struct pollfd *fds, <span class="keyword">unsigned</span> <span class="keyword">int</span> nfds, <span class="keyword">int</span> timeout)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>不同与select使用三个位图来使用三个位图来表示三个fdset的方式，poll使用一个pollfd的指针实现。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">pollfd</span> &#123;</span></span><br><span class="line">    <span class="keyword">int</span> fd; <span class="comment">/* file descriptor */</span></span><br><span class="line">    short events; <span class="comment">/* requested events to watch */</span></span><br><span class="line">    short revents; <span class="comment">/* returned events witnessed */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>pollfd结构包含了要监视的event和发生的event，不再使用select“参数-值”传递的方式。同时，pollfd并没有最大数量限制（但是数量过大后性能也是会下降）。和select函数一样，poll返回后，需要轮询pollfd来获取就绪的描述符。</p>
+<blockquote>
+<p>从上面看，select和poll都需要在返回后，<strong>通过遍历文件描述符来获取已经就绪的socket</strong>。事实上，同时连接的大量客户端在一时刻可能只有很少的处于就绪状态，因此随着见识的描述符数量的增长，其效率也会线性下降。</p>
+</blockquote>
+<h2 id="epoll"><a href="#epoll" class="headerlink" title="epoll"></a>epoll</h2><p>epoll是在2.6内核中提出的，是之前的select和poll的增强版本。相对于select和poll来说，epoll更加灵活，没有描述符限制。epoll使用一个文件描述符管理多个描述符，<strong>将用户关系的文件描述符的事件存放到内核的一个事件表中，这样在用户空间和内核空间的copy只需一次。</strong></p>
+<h3 id="操作过程"><a href="#操作过程" class="headerlink" title="操作过程"></a>操作过程</h3><p>epoll操作过程需要三个接口</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">int epoll_create(int size)；//创建一个epoll的句柄，size用来告诉内核这个监听的数目一共有多大</span><br><span class="line">int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)；</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_wait</span><span class="params">(<span class="keyword">int</span> epfd, struct epoll_event * events, <span class="keyword">int</span> maxevents, <span class="keyword">int</span> timeout)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<h4 id="epoll-create"><a href="#epoll-create" class="headerlink" title="epoll_create"></a>epoll_create</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_create</span><span class="params">(<span class="keyword">int</span> <span class="built_in">size</span>)</span></span></span><br></pre></td></tr></table></figure>
+
+<p>创建一个epoll的句柄，size用来告诉内核这个监听的数目一共有多大，这个参数不同于select()中的第一个参数，给出最大监听的fd+1的值，<strong>参数size并不是限制了epoll所能监听的描述符最大个数，只是对内核初始分配内部数据结构的一个建议</strong>。</p>
+<p>当创建好epoll句柄后，它就会占用一个fd值，在linux下如果查看<code>/proc/进程id/fd/</code>，是能够看到这个fd的，所以在使用完epoll后，必须调用close()关闭，否则可能导致fd被耗尽。</p>
+<h4 id="epoll-ctl"><a href="#epoll-ctl" class="headerlink" title="epoll_ctl"></a>epoll_ctl</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_ctl</span><span class="params">(<span class="keyword">int</span> epfd, <span class="keyword">int</span> op, <span class="keyword">int</span> fd, struct epoll_event *event)</span></span></span><br></pre></td></tr></table></figure>
+
+<p>函数是对指定描述符fd执行op操作。</p>
+<ul>
+<li>epfd：是epoll_create()的返回值。</li>
+<li>op：表示op操作，用三个宏来表示：添加-EPOLL_CTL_ADD，删除-EPOLL_CTL_DEL，修改-EPOLL_CTL_MOD。分别添加、删除和修改对fd的监听事件。</li>
+<li>fd：是需要监听的fd（文件描述符）</li>
+<li>epoll_event：是告诉内核需要监听什么事，struct epoll_event结构如下：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> &#123;</span></span><br><span class="line">  <span class="keyword">__uint32_t</span> events;  <span class="comment">/* Epoll events */</span></span><br><span class="line">  <span class="keyword">epoll_data_t</span> data;  <span class="comment">/* User data variable */</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">//events可以是以下几个宏的集合：</span></span><br><span class="line"><span class="comment">// EPOLLIN ：表示对应的文件描述符可以读（包括对端SOCKET正常关闭）；</span></span><br><span class="line"><span class="comment">// EPOLLOUT：表示对应的文件描述符可以写；</span></span><br><span class="line"><span class="comment">// EPOLLPRI：表示对应的文件描述符有紧急的数据可读（这里应该表示有带外数据到来）；</span></span><br><span class="line"><span class="comment">// EPOLLERR：表示对应的文件描述符发生错误；</span></span><br><span class="line"><span class="comment">// EPOLLHUP：表示对应的文件描述符被挂断；</span></span><br><span class="line"><span class="comment">// EPOLLET： 将EPOLL设为边缘触发(Edge Triggered)模式，这是相对于水平触发(Level Triggered)来说的。</span></span><br><span class="line"><span class="comment">// EPOLLONESHOT：只监听一次事件，当监听完这次事件之后，如果还需要继续监听这个socket的话，需要再次把这个socket加入到EPOLL队列里</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="epoll-wait"><a href="#epoll-wait" class="headerlink" title="epoll_wait"></a>epoll_wait</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">epoll_wait</span><span class="params">(<span class="keyword">int</span> epfd, struct epoll_event * events, <span class="keyword">int</span> maxevents, <span class="keyword">int</span> timeout)</span></span></span><br></pre></td></tr></table></figure>
+
+<p>等待epfd上的io事件，最多返回maxevents个事件。<br>参数events用来从内核得到事件的集合，maxevents告之内核这个events有多大，这个maxevents的值不能大于创建epoll_create()时的size，参数timeout是超时时间（毫秒，0会立即返回，-1将不确定，也有说法说是永久阻塞）。该函数返回需要处理的事件数目，如返回0表示已超时。</p>
+<h3 id="工作模式"><a href="#工作模式" class="headerlink" title="工作模式"></a>工作模式</h3><ul>
+<li>LT模式：当epoll_wait检测到描述符事件发生并将此事件通知应用程序，<strong>应用程序可以不立即处理该事件</strong>。下次调用epoll_wait时，会再次相应应用程序并通知此事件。</li>
+<li>ET模式：当epoll_wait检测到描述符事件发生并将此事件通知应用程序，<strong>应用程序必须立即处理该事件</strong>。如果不处理，下次调用epoll_wait时，不会再次响应应用程序并通知此事件。</li>
+</ul>
+<h5 id="LT模式"><a href="#LT模式" class="headerlink" title="LT模式"></a>LT模式</h5><p>LT(level triggered)是缺省的工作方式，并且同时支持block和no-block socket。在这种做法中，内核告诉你一个文件描述符是否就绪了，然后你可以对这个就绪的fd进行IO操作。如果你不作任何操作，内核还是会继续通知你的。</p>
+<h5 id="ET模式"><a href="#ET模式" class="headerlink" title="ET模式"></a>ET模式</h5><p>ET(edge-triggered)是高速工作方式，只支持no-block socket。在这种模式下，当描述符从未就绪变为就绪时，内核通过epoll告诉你。然后它会假设你知道文件描述符已经就绪，并且不会再为那个文件描述符发送更多的就绪通知，直到你做了某些操作导致那个文件描述符不再为就绪状态了（比如，你在发送，接收或者接收请求，或者发送接收的数据少于一定量时导致了一个EWOULDBLOCK 错误）。但是请注意，如果一直不对这个fd作IO操作(从而导致它再次变成未就绪)，内核不会发送更多的通知(only once)</p>
+<p>ET模式在很大程度上减少了epoll事件被重复触发的次数，因此效率要比LT模式高。epoll工作在ET模式的时候，必须使用非阻塞套接口，以避免由于一个文件句柄的阻塞读/阻塞写操作把处理多个文件描述符的任务饿死。</p>
+<h3 id="总结-1"><a href="#总结-1" class="headerlink" title="总结"></a>总结</h3><p>在 select/poll中，进程只有在调用一定的方法后，内核才对所有监视的文件描述符进行扫描，而<strong>epoll事先通过epoll_ctl()来注册一 个文件描述符，一旦基于某个文件描述符就绪时，内核会采用类似callback的回调机制，迅速激活这个文件描述符，当进程调用epoll_wait() 时便得到通知</strong>。(<strong>此处去掉了遍历文件描述符，而是通过监听回调的的机制</strong>。这正是epoll的魅力所在。)</p>
+<h4 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h4><ol>
+<li>监视的描述符数量不受限制，它所支持的FD上限是最大可以打开文件的数目，这个数字一般远大于2048,举个例子,在1GB内存的机器上大约是10万左 右，具体数目可以<code>cat /proc/sys/fs/file-max</code>察看,一般来说这个数目和系统内存关系很大。select的最大缺点就是进程打开的fd是有数量限制的。这对 于连接数量比较大的服务器来说根本不能满足。虽然也可以选择多进程的解决方案( Apache就是这样实现的)，不过虽然linux上面创建进程的代价比较小，但仍旧是不可忽视的，加上进程间数据同步远比不上线程间同步的高效，所以也不是一种完美的方案。</li>
+<li>IO的效率不会随着监视fd的数量的增长而下降。epoll不同于select和poll轮询的方式，而是通过每个fd定义的回调函数来实现的。只有就绪的fd才会执行回调函数。</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2022/07/11/hdfs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars3.githubusercontent.com/u/25433052?s=460&u=eccf0112bafbce7fa983a4ce2c2e3dfe7d175366&v=4">
+      <meta itemprop="name" content="Sq-List">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Sq-List's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/07/11/hdfs/" class="post-title-link" itemprop="url">hdfs</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-07-11 10:23:09" itemprop="dateCreated datePublished" datetime="2022-07-11T10:23:09+08:00">2022-07-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2023-08-19 16:38:03" itemprop="dateModified" datetime="2023-08-19T16:38:03+08:00">2023-08-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/hadoop/" itemprop="url" rel="index"><span itemprop="name">hadoop</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="启蒙"><a href="#启蒙" class="headerlink" title="启蒙"></a>启蒙</h1><h2 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h2><ul>
+<li>内存寻址的速度比IO寻址快10万倍</li>
+<li>IO速度大概在500MB每秒~1-2GB每秒（根据磁盘类型区分）</li>
+<li><strong>分而治之</strong></li>
+<li>并行计算</li>
+<li>计算要往数据移动</li>
+<li>数据本地化读取</li>
+<li>为什么hadoop项目中还要开发一个分布式文件系统？<br>为了<strong>更好的支持分布式计算</strong></li>
+</ul>
+<h1 id="HDFS"><a href="#HDFS" class="headerlink" title="HDFS"></a>HDFS</h1><h2 id="存储模型"><a href="#存储模型" class="headerlink" title="存储模型"></a>存储模型</h2><ul>
+<li>文件线性按字节切割成块（block），具有offset，id</li>
+<li>文件与文件的block大小可以不一样</li>
+<li>一个文件除最后一个block，其他block大小一致</li>
+<li>block的大小依据硬件的I/O特性调整<ul>
+<li>1.X 64MB  </li>
+<li>2.X 128MB</li>
+<li>256MB</li>
+</ul>
+</li>
+<li>block被分散存放在集群的节点中，具有location</li>
+<li>block具有副本（replication），没有主从概念，副本不能出现在同一个节点</li>
+<li>副本是满足可靠性和性能的关键</li>
+<li>文件上传可以指定block大小和副本数，上传后只能修改副本数</li>
+<li>一次写入多次读取，<strong>不支持修改</strong></li>
+<li>支持追加数据</li>
+</ul>
+<h2 id="架构设计"><a href="#架构设计" class="headerlink" title="架构设计"></a>架构设计</h2><ul>
+<li>主从（master/slaves）架构</li>
+<li>由一个NameNode和一些DataNode组成</li>
+<li>面向文件包含：文件数据（data）和文件元数据（metadata）</li>
+<li>NameNode（主）负责存储和管理文件元数据，并维护了一个层次性的文件目录树</li>
+<li>DataNode（从）负责存储文件数据（block块），并提供block的读写</li>
+<li>DataNode与NameNode维持心跳，并汇报自己持有的block信息</li>
+<li>Client与NameNode交互文件元数据和DataNode交互文件block数据</li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E6%9E%B6%E6%9E%84-20220711-17:03:23.png" alt="HDFS架构"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS-block%E5%89%AF%E6%9C%AC-20220711-17:06:18.png" alt="HDFS-block副本"></p>
+<h2 id="角色（进程）功能"><a href="#角色（进程）功能" class="headerlink" title="角色（进程）功能"></a>角色（进程）功能</h2><h3 id="NameNode"><a href="#NameNode" class="headerlink" title="NameNode"></a>NameNode</h3><ul>
+<li>完全基于内存存储文件元数据、目录结构、文件block的映射</li>
+<li>需要持久化方案保证数据可靠性</li>
+<li>提供<strong>副本</strong>放置策略</li>
+</ul>
+<h3 id="DataNode"><a href="#DataNode" class="headerlink" title="DataNode"></a>DataNode</h3><ul>
+<li>基于本地磁盘存储block（文件的形式）</li>
+<li>保存block的校验和数据，保证block的可靠性</li>
+<li>与NameNode保持心跳，汇报block列表状态</li>
+</ul>
+<h2 id="元数据持久化"><a href="#元数据持久化" class="headerlink" title="元数据持久化"></a>元数据持久化</h2><ul>
+<li>任何对文件系统元数据产生修改的操作，NameNode都会使用一种称为EditLog的事务日志记录下来</li>
+<li>使用FsImage存储内存所有的元数据状态</li>
+<li>使用本地磁盘保存EditLog和FsImage</li>
+</ul>
+<h3 id="两种技术"><a href="#两种技术" class="headerlink" title="两种技术"></a>两种技术</h3><h4 id="日志文件"><a href="#日志文件" class="headerlink" title="日志文件"></a>日志文件</h4><ul>
+<li>完整性，数据丢失少</li>
+<li>恢复数据慢，占空间</li>
+</ul>
+<h4 id="镜像、快照"><a href="#镜像、快照" class="headerlink" title="镜像、快照"></a>镜像、快照</h4><ul>
+<li><p>不能实时保存，需要间隔（小时、天）；容易丢失数据</p>
+</li>
+<li><p>恢复速度快过 日志文件</p>
+</li>
+</ul>
+<h3 id="结合"><a href="#结合" class="headerlink" title="结合"></a>结合</h3><ul>
+<li>NameNode使用了FsImage+EditLog整合的方案：<ul>
+<li>滚动将增量的EditLog更新到FsImage，以保证更近时点的FsImage和更小的EditLog体积</li>
+</ul>
+</li>
+</ul>
+<h2 id="安全模式"><a href="#安全模式" class="headerlink" title="安全模式"></a>安全模式</h2><ul>
+<li><p>HDFS搭建时会格式化，格式化操作会产生一个空的FsImage。</p>
+<ul>
+<li><code>hdfs namenode -format</code></li>
+</ul>
+</li>
+<li><p>当NameNode启动时，它从硬盘中读取读取EditLog和FsImage。</p>
+</li>
+<li><p>将所有EditLog中的事务作用在内存中的FsImage上。</p>
+</li>
+<li><p>将这个新版本的FsImage从内存中保存到本地磁盘上，然后删除旧的EditLog（因为这个就的EditLog的事务都已经作用在FsImage上了）</p>
+</li>
+<li></li>
+<li><p>NameNode启动后会进入一个称为安全模式的特殊状态。</p>
+</li>
+<li><p>处于安全模式的NameNode是不会进行数据块的复制的。</p>
+</li>
+<li><p>NameNode会从所有DataNode接收心跳信号和块状态报告。</p>
+</li>
+<li><p>每当NameNode检测确认某个数据块的副本数量达到这个最小值，那么该数据块就会被认为是副本安全（safely replicated）的。</p>
+</li>
+<li><p>在一定百分比（这个参数可配置）的数据块被NameNode检测确认是安全之后（加上一个额外的30秒等待时间），NameNode将推出安全模式状态。</p>
+</li>
+<li><p>接下来它会确认还有那些数据块的副本没有达到指定数目，并将这些数据块复制到其他DataNode上。</p>
+</li>
+</ul>
+<h2 id="SecondaryNameNode（SNN）"><a href="#SecondaryNameNode（SNN）" class="headerlink" title="SecondaryNameNode（SNN）"></a>SecondaryNameNode（SNN）</h2><ul>
+<li><strong>在非HA模式（1.X没有HA模式）下</strong>，SNN一般是独立的节点，周期完成对NN的EditLo向FsImage合并，减少EditLog大小，减少EditLog大小，减少NN启动时间</li>
+<li>根据配置文件设置的时间间隔 fs.checkpoint.period 默认3600秒</li>
+<li>根据配置文件设置EditLog大小 fs.checkpoint.size 规定EditLogs文件最大值默认64MB</li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/SNN-20220717-17:11:44.png" alt="SNN"></p>
+<h2 id="副本放置策略"><a href="#副本放置策略" class="headerlink" title="副本放置策略"></a>副本放置策略</h2><ul>
+<li>第一个副本：放置在上传文件的DataNode；如果是集群外提交，则随机挑选一台磁盘不太满，CPU不太忙的节点。</li>
+<li>第二个副本：放置在与第一个副本不同的机架的节点上。</li>
+<li>第三个副本：与第二个副本相同机架的节点。</li>
+<li>更多副本：随机节点。</li>
+</ul>
+<h2 id="读写流程"><a href="#读写流程" class="headerlink" title="读写流程"></a>读写流程</h2><h3 id="写流程"><a href="#写流程" class="headerlink" title="写流程"></a>写流程</h3><p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E5%86%99%E6%B5%81%E7%A8%8B-20220717-17:56:17.png" alt=""></p>
+<ul>
+<li>Client和NameNode连接创建文件元数据</li>
+<li>NameNode判定元数据是否有效</li>
+<li>NameNode处发副本放置策略，返回一个有序的DataNode列表</li>
+<li>Client和DataNode建立Pipeline连接</li>
+<li>Client将块切分成packet（64KB），并使用chunk（512B）+chucksum（4B）填充</li>
+<li>Client将packet放入发送队列dataqueue中，并向第一个DataNode发送</li>
+<li>第一个DataNode收到packet后，本地保存并发送给第二个DataNode</li>
+<li>第二个DataNode收到packet后，本地保存并发送给第三个DataNode</li>
+<li>这一个过程中，上游节点同时发送下一个packet</li>
+<li>生活中类比工厂的流水线；结论：流式其实也是变种的并行计算</li>
+<li>HDFS使用这种传输方式，副本数对于Client是透明的</li>
+<li>当block传输完成，DataNode各自向NameNode汇报，同时Client继续传输下一个block</li>
+<li>所以 Client的传输和block的汇报也是并行的</li>
+<li>Client只需要想建立连接的DataNode传输，不用管DataNode与DataNode间的传输（DataNode宕机之类 ），NameNode会保证集群中每个Block的副本数</li>
+</ul>
+<h3 id="读流程"><a href="#读流程" class="headerlink" title="读流程"></a>读流程</h3><p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS%E8%AF%BB%E6%B5%81%E7%A8%8B-20220724-10:37:17.png" alt="HDFS读流程"></p>
+<ul>
+<li>为了降低是整体的带宽消耗和读取延时，HDFS会尽量让读取程序读取离它最近的副本。</li>
+<li>如果在读取程序的同一个机架上有一个副本。那么就读该副本。</li>
+<li>如果一个HDFS集群跨越多个数据中心，那么客户端也将首先读本地数据中心的副本。</li>
+<li>语义：下载一个文件<ul>
+<li>Client和NameNode交互文件元数据获取所有的fileBlockLocation</li>
+<li>NameNode会按距离策略排序返回</li>
+<li>Client尝试下载block并校验数据完整性</li>
+</ul>
+</li>
+<li>语义：下载一个文件其实是获取文件的所有block元数据，那么子集获取某些block也应该成立<ul>
+<li><font color="#dd0000"> HDFS支持Client给出文件的offset自定义连接哪些block的DataName，自定义获取数据</font></li>
+<li><font color="#dd0000"> 这个是支持计算层的分治，并行计算的核心</font></li>
+</ul>
+</li>
+</ul>
+<h3 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h3><h4 id="NameNode-1"><a href="#NameNode-1" class="headerlink" title="NameNode"></a>NameNode</h4><ul>
+<li>NameNode只有在重启集群后，可使用之前会将EditLog写入FsImage，其他在运行的情况下只能通过 SecondNameNode进行</li>
+</ul>
+<h2 id="目前存在问题"><a href="#目前存在问题" class="headerlink" title="目前存在问题"></a>目前存在问题</h2><h3 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h3><ul>
+<li>主从集群：结构相对简单，主与从从协作</li>
+<li>主：单点，数据一致好掌握</li>
+<li>问题：<ul>
+<li>单点故障，集群整体不可用</li>
+<li>压力过大，内存受限</li>
+</ul>
+</li>
+</ul>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><ul>
+<li>单点故障：<ul>
+<li>高可用方案：HA</li>
+<li>多个NameNode、主备切换</li>
+<li>2.X提出HA 但是只支持一主一备；3.X能够一主多备，最多支持5备，建议3备</li>
+</ul>
+</li>
+<li>压力过大，内存受限：<ul>
+<li>联邦机制：Federation（元数据分片）</li>
+<li>多个NameNode，管理不同的元数据</li>
+</ul>
+</li>
+</ul>
+<h2 id="HA"><a href="#HA" class="headerlink" title="HA"></a>HA</h2><p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/HDFS-HA-20220831-17:34:56.png" alt="HDFS-HA"></p>
+<h3 id="Paxos算法"><a href="#Paxos算法" class="headerlink" title="Paxos算法"></a>Paxos算法</h3><ul>
+<li>消息传递的一致性算法。</li>
+<li>这个算法被认为是类似算法中最有效的。</li>
+<li>该算法覆盖全部场景的一致性。</li>
+<li>每种技术会根据子技术的特征选择简化算法实现。</li>
+<li>传递：NN之间通过一个可靠的传输技术，最终数据能同步就可以</li>
+</ul>
+<h3 id="简化思路"><a href="#简化思路" class="headerlink" title="简化思路"></a>简化思路</h3><ul>
+<li>分布式节点是否明确</li>
+<li>节点权重是否明确</li>
+<li>强一致性破坏可用性</li>
+<li>过半通过 可以中和一致性和可用性</li>
+<li>最简单的自我协调实现：主从</li>
+<li>主的选举：明确节点数量和权重</li>
+<li>主从的职能：<ul>
+<li>主：增删改查</li>
+<li>从：查，增删改传递给主</li>
+<li>主与从：过半数同步数据</li>
+</ul>
+</li>
+</ul>
+<h3 id="方案"><a href="#方案" class="headerlink" title="方案"></a>方案</h3><ul>
+<li>多台NN主备模式，Active和Standby状态<ul>
+<li>Active对外提供服务</li>
+</ul>
+</li>
+<li>增加journalNode角色（&gt;3台），负责同步NN的editlog<ul>
+<li>最终一致性</li>
+</ul>
+</li>
+<li>增加zkfc角色（与NN同台），通过zookeeper集群协调NN的主从选举和切换<ul>
+<li>事件回调机制</li>
+</ul>
+</li>
+<li>DN同时向NN汇报block清单</li>
+</ul>
+<h3 id="PS"><a href="#PS" class="headerlink" title="PS"></a>PS</h3><ul>
+<li>开启了HA的话，SNN会被替换成standby NN，checkpoint过程会直接交给standby NN来负责。active NN会将edits文件同时写到本地与共享存储（比如QJM方案就是JournalNode集群）上去，standby NN从JournalNode集群拉取edits文件，和从active NN拉取的fsimage进行合并，并保持fsimage文件与active NameNode的同步。</li>
+</ul>
+<h2 id="部署流程"><a href="#部署流程" class="headerlink" title="部署流程"></a>部署流程</h2><h3 id="基础设施"><a href="#基础设施" class="headerlink" title="基础设施"></a>基础设施</h3><h4 id="ssh免密"><a href="#ssh免密" class="headerlink" title="ssh免密"></a>ssh免密</h4><ol>
+<li>启动start-dfs.sh脚本的机器需要将公开的密钥分发给别的节点</li>
+<li>在HA模式下，每一个NN同机器会启动zkfc<ol>
+<li>zkfc公用免密的方式控制自己和其他NN节点的NN状态</li>
+</ol>
+</li>
+</ol>
+<h3 id="应用搭建"><a href="#应用搭建" class="headerlink" title="应用搭建"></a>应用搭建</h3><ol>
+<li>HA依赖ZK 搭建ZK集群</li>
+<li>修改hadoop的配置文件，并集群间同步</li>
+</ol>
+<h3 id="初始化启动"><a href="#初始化启动" class="headerlink" title="初始化启动"></a>初始化启动</h3><ol>
+<li><p>先启动 JNN</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop-daemon.sh start journalnode</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>选择一个NN做格式化</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hdfs namenode format</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动这个格式化的NN，以备另外几台同步</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop-daemon.sh start namenode</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>在另外几台NN中</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">   hdfs namenode -bootstrapStandby</span><br><span class="line"></span><br><span class="line">5. 格式化ZK</span><br><span class="line">   ```shell</span><br><span class="line">   hdfs zkfc -formatZK</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动hdfs</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">start-dfs.sh</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<h3 id="PS-1"><a href="#PS-1" class="headerlink" title="PS"></a>PS</h3><h4 id="zookeeper三个端口的作用"><a href="#zookeeper三个端口的作用" class="headerlink" title="zookeeper三个端口的作用"></a>zookeeper三个端口的作用</h4><ul>
+<li>2181：对cline端提供服务</li>
+<li>3888：选举leader使用</li>
+<li>2888：集群内机器通讯使用（Leader监听此端口）</li>
+</ul>
+<h2 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h2><p>hdfs是一个文件系统</p>
+<ul>
+<li>类unix、linux</li>
+<li>hdfs没有相关命令和接口去创建用户<ul>
+<li>信任客户端 <ul>
+<li>默认情况使用的 操作系统提供的用户</li>
+<li>扩展kerberos、LDAP （集成第三方用户认证系统）</li>
+</ul>
+</li>
+<li>有超级用户的概念<ul>
+<li>linux系统重的超级用户：root</li>
+<li>hdfs系统中超级用：namenode进程的启动用户</li>
+</ul>
+</li>
+<li>权限概念<ul>
+<li>hdfs的权限是自己控制的 来自于hdfs的超级用户</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="HDFS开发"><a href="#HDFS开发" class="headerlink" title="HDFS开发"></a>HDFS开发</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">blocks</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">    Path file = <span class="keyword">new</span> Path(<span class="string">"/user/god/data.txt"</span>);</span><br><span class="line">    FileStatus fss = fs.getFileStatus(file);</span><br><span class="line">    BlockLocation[] blks = fs.getFileBlockLocations(fss, <span class="number">0</span>, fss.getLen());</span><br><span class="line">    <span class="keyword">for</span> (BlockLocation b : blks) &#123;</span><br><span class="line">        System.out.println(b);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">//        0,        1048576,        node04,node02  A</span></span><br><span class="line"><span class="comment">//        1048576,  540319,         node04,node03  B</span></span><br><span class="line">    <span class="comment">//计算向数据移动~！</span></span><br><span class="line">    <span class="comment">//其实用户和程序读取的是文件这个级别~！并不知道有块的概念~！</span></span><br><span class="line">    FSDataInputStream in = fs.open(file);  <span class="comment">//面向文件打开的输入流  无论怎么读都是从文件开始读起~！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//        blk01: he</span></span><br><span class="line"><span class="comment">//        blk02: llo msb 66231</span></span><br><span class="line"></span><br><span class="line">    in.seek(<span class="number">1048576</span>);</span><br><span class="line">    <span class="comment">//计算向数据移动后，期望的是分治，只读取自己关心（通过seek实现），同时，具备距离的概念（优先和本地的DN获取数据--框架的默认机制）</span></span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">    System.out.println((<span class="keyword">char</span>)in.readByte());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="MapReduce"><a href="#MapReduce" class="headerlink" title="MapReduce"></a>MapReduce</h1><h2 id="计算模型"><a href="#计算模型" class="headerlink" title="计算模型"></a>计算模型</h2><ul>
+<li><p>Map：以一条记录为记录做映射</p>
+</li>
+<li><p>Reduce：以一组为单位做计算</p>
+<ul>
+<li>什么叫做一组？按某种规律分组</li>
+<li>依赖一种数据格式 Key：Value</li>
+<li>Key：Value 由map映射实现</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>Map：<ul>
+<li>映射、变换、过滤</li>
+<li>1进N出</li>
+</ul>
+</li>
+<li>Reduce：<ul>
+<li>分解、缩小、归纳</li>
+<li>一组近N出</li>
+</ul>
+</li>
+<li>（KEY,VALUE）：<ul>
+<li>键值对的键划分数据分组</li>
+</ul>
+</li>
+</ul>
+<p>切片</p>
+<ul>
+<li>控制粒度（并行度）</li>
+<li>一个切片对应一个map</li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/MapReduce%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B-20230709-17:00:59.png" alt="MapReduce执行流程"></p>
+<p>数据已一条记录为单位经过map方法映射成KV，相同key为一组，这一组数据调用一次reduce方法，在方法内迭代计算着一组数据。</p>
+<ul>
+<li><p>Bolck &gt; split</p>
+<ul>
+<li><p>1:1</p>
+</li>
+<li><p>N:1</p>
+</li>
+<li><p>1:N</p>
+</li>
+</ul>
+</li>
+<li><p>Split &gt; map</p>
+<ul>
+<li>1:1</li>
+</ul>
+</li>
+<li><p>Map &gt; reduce</p>
+<ul>
+<li>N:1</li>
+<li>N:N</li>
+<li>1:1</li>
+<li>1:N</li>
+</ul>
+</li>
+<li><p>Group(key) &gt; partition</p>
+<ul>
+<li>1:1</li>
+<li>N:1</li>
+<li>N:N</li>
+<li><em>1:N</em>（只会进到其中一个partition）</li>
+</ul>
+</li>
+</ul>
+<h3 id="细节"><a href="#细节" class="headerlink" title="细节"></a>细节</h3><p><img src="https://cdn.jsdelivr.net/gh/sq-list/oss@master/uPic/MapReduce%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B-%E7%BB%86-20230709-17:04:50.png" alt="MapReduce执行流程-细"></p>
+<ol>
+<li>切片会格式化出记录，以记录为单位调用map方法</li>
+<li>map的输出映射成KV，KV会参与分区计算，拿着key算出P（分区号），得到KVP<ol>
+<li>内存缓存区大小默认128MB</li>
+</ol>
+</li>
+<li>内存缓存区溢写时，做一个2次排序：分区有序，且分区内key有序，</li>
+<li>mapTask的输出是一个文件，存在本地的文件系统中<ol>
+<li>如果文件不按分区排序，就会导致IO很高，每个reduce都会打开文件，重头遍历到尾</li>
+<li>按照缓存区大小落地磁盘，就会得到一批内部有序外部无序的文件，再做一个归并排序即可得到一个内部有序的文件，每个reduce即可按序取一次即可</li>
+</ol>
+</li>
+<li>reduce的归并排序其实可以和reduce方法的计算同事发生，尽量减少IO<ol>
+<li>因为有迭代器模式的支持</li>
+</ol>
+</li>
+</ol>
+<p>迭代器模式是批量计算中非常优美的实现形式。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="https://sq-list.github.io/2021/08/31/%E7%AE%97%E6%B3%95-%E5%B7%AE%E5%88%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -298,7 +940,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-06-06 16:52:16" itemprop="dateModified" datetime="2022-06-06T16:52:16+08:00">2022-06-06</time>
+                <time title="修改时间：2023-08-19 16:37:56" itemprop="dateModified" datetime="2023-08-19T16:37:56+08:00">2023-08-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -707,20 +1349,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-count">5</span>
         <span class="site-state-item-name">分类</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-count">13</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
@@ -755,7 +1397,7 @@
 <div class="copyright">
   
   &copy; 2020 – 
-  <span itemprop="copyrightYear">2022</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>
@@ -764,12 +1406,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-chart-area"></i>
     </span>
-    <span title="站点总字数">64k</span>
+    <span title="站点总字数">79k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">59 分钟</span>
+    <span title="站点阅读时长">1:11</span>
 </div>
 
         
